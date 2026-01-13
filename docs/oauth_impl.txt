@@ -1,0 +1,102 @@
+OAuth2 Implementation and API Documentation Update
+Add Google OAuth2 authentication to the existing JWT-based Spring Boot application and update API documentation to reflect the new authentication flow.
+
+User Review Required
+IMPORTANT
+
+OAuth2 redirects to frontend: The success handler currently redirects to http://localhost:3000/oauth2/redirect?token=.... Please confirm if this is the correct frontend URL or provide the correct one.
+
+IMPORTANT
+
+OAuth-only users will not have passwords: Users who sign up via Google will have null password. They cannot use the /api/auth/login endpoint. Is this acceptable?
+
+Proposed Changes
+Security Package
+[NEW] 
+OAuth2AuthenticationSuccessHandler.java
+Create a success handler that:
+
+Extracts user email from OAuth2 authentication principal
+Finds existing user or creates new user in database
+Generates JWT token using 
+JwtUtils
+Redirects to frontend with token as query parameter
+@Component
+public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+    // Inject JwtUtils and UserRepository
+    // On success: find/create user, generate JWT, redirect with token
+}
+[MODIFY] 
+JwtUtils.java
+Add overloaded method to generate token from email string (for OAuth flow):
+
++public String generateToken(String email) {
++    Map<String, Object> claims = new HashMap<>();
++    return createToken(claims, email);
++}
+Entity Package
+[MODIFY] 
+User.java
+Make passwordHash nullable (OAuth users won't have a password)
+Add an authProvider field (enum: LOCAL, GOOGLE)
+-@Column(name = "password_hash", nullable = false)
++@Column(name = "password_hash")
+ private String passwordHash;
++@Enumerated(EnumType.STRING)
++@Column(name = "auth_provider", length = 20)
++@Builder.Default
++private AuthProvider authProvider = AuthProvider.LOCAL;
+Enums Package
+[NEW] 
+AuthProvider.java
+public enum AuthProvider {
+    LOCAL,
+    GOOGLE
+}
+Config Package
+[MODIFY] 
+SecurityConfig.java
+Inject OAuth2AuthenticationSuccessHandler
+Add oauth2Login() with success handler
+Permit /login/** and /oauth2/** endpoints
+.authorizeHttpRequests(auth -> auth
+-    .requestMatchers("/api/auth/**").permitAll()
++    .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**").permitAll()
+     .requestMatchers("/actuator/**").permitAll()
+     ...
+ )
++.oauth2Login(oauth2 -> oauth2
++    .successHandler(oAuth2AuthenticationSuccessHandler)
++)
+Documentation
+[MODIFY] 
+api_docs.md
+Add new section documenting:
+
+OAuth2 initiation endpoint: GET /oauth2/authorization/google
+The callback/redirect flow
+How frontend receives and stores the JWT token
+Verification Plan
+Build Verification
+Run the following command to verify successful compilation:
+
+cd /Users/dushyantbhardwaj/Documents/javaProj/tenantmanage && ./mvnw compile
+Unit Tests
+The existing test file at 
+src/test/java/com/dushy/tenantmanage/TenantmanageApplicationTests.java
+ contains basic context load tests. Run:
+
+cd /Users/dushyantbhardwaj/Documents/javaProj/tenantmanage && ./mvnw test
+Manual Verification (Requires User)
+Ensure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are set
+Start the application: ./mvnw spring-boot:run
+Navigate to http://localhost:8080/oauth2/authorization/google in a browser
+Complete Google login
+Verify redirect to frontend with ?token=... parameter
+Use the token in subsequent API calls
+NOTE
+
+Full OAuth2 flow testing requires valid Google OAuth credentials configured in Google Cloud Console. If you have these set up, please confirm and I can provide more detailed verification steps.
+
+yes
+yes
