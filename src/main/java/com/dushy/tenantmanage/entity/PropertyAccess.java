@@ -1,6 +1,7 @@
 package com.dushy.tenantmanage.entity;
 
 import com.dushy.tenantmanage.enums.AccessLevel;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "property_access", uniqueConstraints = {

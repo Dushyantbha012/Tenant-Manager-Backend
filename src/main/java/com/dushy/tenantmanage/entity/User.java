@@ -2,6 +2,7 @@ package com.dushy.tenantmanage.entity;
 
 import com.dushy.tenantmanage.enums.AuthProvider;
 import com.dushy.tenantmanage.enums.UserType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "users")
 @Data
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

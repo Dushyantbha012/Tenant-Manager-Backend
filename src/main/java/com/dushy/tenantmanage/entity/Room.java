@@ -1,6 +1,7 @@
 package com.dushy.tenantmanage.entity;
 
 import com.dushy.tenantmanage.enums.RoomType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Table(name = "rooms", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "floor_id", "room_number" })
 })
