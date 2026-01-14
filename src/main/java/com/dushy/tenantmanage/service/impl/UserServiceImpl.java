@@ -1,10 +1,12 @@
 package com.dushy.tenantmanage.service.impl;
 
+import com.dushy.tenantmanage.dto.UpdatePasswordDto;
 import com.dushy.tenantmanage.dto.UserDto;
 import com.dushy.tenantmanage.entity.Properties;
 import com.dushy.tenantmanage.entity.PropertyAccess;
 import com.dushy.tenantmanage.entity.User;
 import com.dushy.tenantmanage.enums.AccessLevel;
+import com.dushy.tenantmanage.enums.UserType;
 import com.dushy.tenantmanage.exception.DuplicateResourceException;
 import com.dushy.tenantmanage.exception.InvalidOperationException;
 import com.dushy.tenantmanage.exception.ResourceNotFoundException;
@@ -44,12 +46,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User registerUser(UserDto userDto) {
-        // Check for duplicate email
         if (userRepository.existsByEmail(userDto.getEmail())) {
             throw new DuplicateResourceException("User", "email", userDto.getEmail());
         }
 
-        // Hash password and create user
         User user = User.builder()
                 .email(userDto.getEmail())
                 .passwordHash(passwordEncoder.encode(userDto.getPassword()))
@@ -82,30 +82,24 @@ public class UserServiceImpl implements UserService {
     @Override
     public PropertyAccess assignPropertyAccess(Long propertyId, Long userId, AccessLevel accessLevel,
             Long grantedById) {
-        // Validate property exists
         Properties property = propertiesRepository.findById(propertyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Property", propertyId));
 
-        // Validate user exists
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        // Validate granter exists
         User grantedBy = userRepository.findById(grantedById)
                 .orElseThrow(() -> new ResourceNotFoundException("User", grantedById));
 
-        // Check if access already exists
         Optional<PropertyAccess> existingAccess = propertyAccessRepository
                 .findByPropertyIdAndUserIdAndIsActiveTrue(propertyId, userId);
 
         if (existingAccess.isPresent()) {
-            // Update existing access level
             PropertyAccess access = existingAccess.get();
             access.setAccessLevel(accessLevel);
             return propertyAccessRepository.save(access);
         }
 
-        // Create new property access
         PropertyAccess propertyAccess = PropertyAccess.builder()
                 .property(property)
                 .user(user)
@@ -134,5 +128,47 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public User updateProfile(Long userId, UserDto userDto) {
+        User user = getUserById(userId);
+        user.setFullName(userDto.getFullName());
+        user.setPhone(userDto.getPhone());
+        return userRepository.save(user);
+    }
+
+    @Override
+    public void changePassword(Long userId, UpdatePasswordDto passwordDto) {
+        User user = getUserById(userId);
+
+        if (user.getPasswordHash() != null &&
+                !passwordEncoder.matches(passwordDto.getCurrentPassword(), user.getPasswordHash())) {
+            throw new InvalidOperationException("Current password is incorrect");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(passwordDto.getNewPassword()));
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> getAssistants(Long ownerId) {
+        // Get all ASSISTANT type users - in a real system you'd track who created them
+        return userRepository.findByUserType(UserType.ASSISTANT);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PropertyAccess> getPropertyAccessByUser(Long userId) {
+        return propertyAccessRepository.findByUserIdAndIsActiveTrue(userId);
+    }
+
+    @Override
+    public void revokeAccess(Long accessId) {
+        PropertyAccess access = propertyAccessRepository.findById(accessId)
+                .orElseThrow(() -> new ResourceNotFoundException("PropertyAccess", accessId));
+        access.setIsActive(false);
+        propertyAccessRepository.save(access);
     }
 }

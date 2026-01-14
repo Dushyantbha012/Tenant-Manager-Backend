@@ -1,7 +1,10 @@
 package com.dushy.tenantmanage.controller;
 
+import com.dushy.tenantmanage.dto.RentAgreementDto;
+import com.dushy.tenantmanage.dto.TenantDto;
 import com.dushy.tenantmanage.dto.request.CreateTenantRequest;
 import com.dushy.tenantmanage.dto.request.SwapTenantRequest;
+import com.dushy.tenantmanage.entity.RentAgreement;
 import com.dushy.tenantmanage.entity.Tenant;
 import com.dushy.tenantmanage.entity.User;
 import com.dushy.tenantmanage.security.CustomUserDetailsService;
@@ -18,7 +21,6 @@ import java.util.Optional;
 
 /**
  * REST Controller for tenant lifecycle management.
- * Handles tenant addition, move-out, and swapping.
  */
 @RestController
 @RequestMapping("/api")
@@ -33,21 +35,11 @@ public class TenantController {
         this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * Get the currently authenticated user.
-     */
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return userDetailsService.loadUserEntityByEmail(auth.getName());
     }
 
-    /**
-     * Add a new tenant to a room.
-     * Creates tenant record, marks room as occupied, and creates rent agreement.
-     *
-     * @param request the tenant creation request
-     * @return the created tenant
-     */
     @PostMapping("/tenants")
     public ResponseEntity<Tenant> addTenant(@Valid @RequestBody CreateTenantRequest request) {
         User currentUser = getCurrentUser();
@@ -59,50 +51,31 @@ public class TenantController {
         return ResponseEntity.status(HttpStatus.CREATED).body(tenant);
     }
 
-    /**
-     * Get all active tenants.
-     *
-     * @return list of active tenants
-     */
     @GetMapping("/tenants")
     public ResponseEntity<List<Tenant>> getActiveTenants() {
         List<Tenant> tenants = tenantService.getActiveTenants();
         return ResponseEntity.ok(tenants);
     }
 
-    /**
-     * Get a tenant by ID.
-     *
-     * @param id the tenant ID
-     * @return the tenant
-     */
     @GetMapping("/tenants/{id}")
     public ResponseEntity<Tenant> getTenantById(@PathVariable Long id) {
         Tenant tenant = tenantService.getTenantById(id);
         return ResponseEntity.ok(tenant);
     }
 
-    /**
-     * Move out a tenant (soft delete).
-     * Marks tenant as inactive, closes rent agreement, and frees up the room.
-     *
-     * @param id the tenant ID
-     * @return the updated tenant
-     */
+    @PutMapping("/tenants/{id}")
+    public ResponseEntity<Tenant> updateTenant(@PathVariable Long id,
+            @Valid @RequestBody TenantDto tenantDto) {
+        Tenant tenant = tenantService.updateTenant(id, tenantDto);
+        return ResponseEntity.ok(tenant);
+    }
+
     @DeleteMapping("/tenants/{id}")
     public ResponseEntity<Tenant> moveOutTenant(@PathVariable Long id) {
         Tenant tenant = tenantService.moveOutTenant(id);
         return ResponseEntity.ok(tenant);
     }
 
-    /**
-     * Swap a tenant (atomic move-out and add new).
-     * Closes old tenant's agreement and creates new tenant in the same room.
-     *
-     * @param id      the ID of the tenant moving out
-     * @param request the swap request containing new tenant data
-     * @return the new tenant
-     */
     @PostMapping("/tenants/{id}/swap")
     public ResponseEntity<Tenant> swapTenant(@PathVariable Long id,
             @Valid @RequestBody SwapTenantRequest request) {
@@ -115,12 +88,27 @@ public class TenantController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newTenant);
     }
 
-    /**
-     * Get the active tenant for a room.
-     *
-     * @param roomId the room ID
-     * @return the tenant if found, or 204 No Content if room is vacant
-     */
+    @PutMapping("/tenants/{id}/agreement")
+    public ResponseEntity<RentAgreement> updateAgreement(@PathVariable Long id,
+            @Valid @RequestBody RentAgreementDto agreementDto) {
+        RentAgreement agreement = tenantService.updateAgreement(id, agreementDto);
+        return ResponseEntity.ok(agreement);
+    }
+
+    @GetMapping("/tenants/search")
+    public ResponseEntity<List<Tenant>> searchTenants(
+            @RequestParam String query,
+            @RequestParam(required = false) Long propertyId) {
+        List<Tenant> tenants = tenantService.searchTenants(query, propertyId);
+        return ResponseEntity.ok(tenants);
+    }
+
+    @GetMapping("/properties/{propertyId}/tenants")
+    public ResponseEntity<List<Tenant>> getTenantsByProperty(@PathVariable Long propertyId) {
+        List<Tenant> tenants = tenantService.getTenantsByProperty(propertyId);
+        return ResponseEntity.ok(tenants);
+    }
+
     @GetMapping("/rooms/{roomId}/tenant")
     public ResponseEntity<Tenant> getActiveTenantByRoom(@PathVariable Long roomId) {
         Optional<Tenant> tenant = tenantService.getActiveTenantByRoom(roomId);

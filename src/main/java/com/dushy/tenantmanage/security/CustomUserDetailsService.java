@@ -34,9 +34,13 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User account is inactive: " + email);
         }
 
+        // OAuth users don't have a password - use empty string as placeholder
+        // They authenticate via OAuth, not password, so this is safe
+        String password = user.getPasswordHash() != null ? user.getPasswordHash() : "";
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
-                user.getPasswordHash(),
+                password,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getUserType().name())));
     }
 

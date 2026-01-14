@@ -1,8 +1,10 @@
 package com.dushy.tenantmanage.service;
 
+import com.dushy.tenantmanage.dto.BulkPaymentDto;
 import com.dushy.tenantmanage.dto.DueRentDto;
 import com.dushy.tenantmanage.dto.RentAgreementDto;
 import com.dushy.tenantmanage.dto.RentPaymentDto;
+import com.dushy.tenantmanage.dto.RentSummaryDto;
 import com.dushy.tenantmanage.entity.RentAgreement;
 import com.dushy.tenantmanage.entity.RentPayment;
 
@@ -18,73 +20,67 @@ public interface RentService {
 
     /**
      * Create a new rent agreement for a tenant.
-     *
-     * @param agreementDto the agreement data
-     * @param tenantId     the ID of the tenant
-     * @param createdById  the ID of the user creating the agreement
-     * @return the created rent agreement
      */
     RentAgreement createRentAgreement(RentAgreementDto agreementDto, Long tenantId, Long createdById);
 
     /**
      * Close an active rent agreement.
-     * Sets end date to today and marks as inactive.
-     *
-     * @param agreementId the ID of the agreement
-     * @return the closed agreement
      */
     RentAgreement closeRentAgreement(Long agreementId);
 
     /**
      * Record a rent payment.
-     * Payments are immutable - never updated or deleted.
-     *
-     * @param paymentDto   the payment data
-     * @param tenantId     the ID of the tenant
-     * @param recordedById the ID of the user recording the payment
-     * @return the recorded payment
      */
     RentPayment recordPayment(RentPaymentDto paymentDto, Long tenantId, Long recordedById);
 
     /**
      * Calculate due rent for a tenant for a specific month.
-     * Formula: Expected Rent - Paid Amount
-     *
-     * @param tenantId the ID of the tenant
-     * @param month    the month to calculate for (first day of month)
-     * @return the due rent calculation
      */
     DueRentDto calculateDueRent(Long tenantId, LocalDate month);
 
     /**
      * Get due rent report for all active tenants for a month.
-     *
-     * @param month the month to generate report for
-     * @return list of due rent calculations
      */
     List<DueRentDto> getDueRentReport(LocalDate month);
 
     /**
      * Get the active rent agreement for a tenant.
-     *
-     * @param tenantId the tenant ID
-     * @return optional containing the active agreement if found
      */
     Optional<RentAgreement> getActiveAgreementByTenant(Long tenantId);
 
     /**
      * Get all payments for a tenant.
-     *
-     * @param tenantId the tenant ID
-     * @return list of payments ordered by date descending
      */
     List<RentPayment> getPaymentsByTenant(Long tenantId);
 
     /**
      * Get all payments for a specific month.
-     *
-     * @param month the month (first day of month)
-     * @return list of payments for the month
      */
     List<RentPayment> getPaymentsByMonth(LocalDate month);
+
+    /**
+     * Get monthly rent collection summary for a property.
+     *
+     * @param propertyId the property ID
+     * @return rent summary for current month
+     */
+    RentSummaryDto getRentSummaryByProperty(Long propertyId);
+
+    /**
+     * Search payments within a date range.
+     *
+     * @param startDate start date
+     * @param endDate   end date
+     * @return list of payments
+     */
+    List<RentPayment> searchPayments(LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Record multiple payments in bulk.
+     *
+     * @param bulkPaymentDto the bulk payment data
+     * @param recordedById   the user recording the payments
+     * @return list of recorded payments
+     */
+    List<RentPayment> bulkRecordPayments(BulkPaymentDto bulkPaymentDto, Long recordedById);
 }

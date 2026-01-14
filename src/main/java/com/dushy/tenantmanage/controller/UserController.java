@@ -1,6 +1,8 @@
 package com.dushy.tenantmanage.controller;
 
 import com.dushy.tenantmanage.dto.PropertyAccessDto;
+import com.dushy.tenantmanage.dto.UpdatePasswordDto;
+import com.dushy.tenantmanage.dto.UserDto;
 import com.dushy.tenantmanage.entity.PropertyAccess;
 import com.dushy.tenantmanage.entity.User;
 import com.dushy.tenantmanage.security.CustomUserDetailsService;
@@ -16,7 +18,6 @@ import java.util.List;
 
 /**
  * REST Controller for user and property access management.
- * Handles user retrieval and property access assignment.
  */
 @RestController
 @RequestMapping("/api/users")
@@ -31,45 +32,56 @@ public class UserController {
         this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * Get the currently authenticated user.
-     */
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return userDetailsService.loadUserEntityByEmail(auth.getName());
     }
 
-    /**
-     * Get all users in the system.
-     * Typically used by admin/owner for managing access.
-     *
-     * @return list of all users
-     */
+    // ==================== PROFILE ENDPOINTS ====================
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUserProfile() {
+        User user = getCurrentUser();
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<User> updateProfile(@Valid @RequestBody UserDto userDto) {
+        User currentUser = getCurrentUser();
+        User updated = userService.updateProfile(currentUser.getId(), userDto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody UpdatePasswordDto passwordDto) {
+        User currentUser = getCurrentUser();
+        userService.changePassword(currentUser.getId(), passwordDto);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ==================== USER MANAGEMENT ENDPOINTS ====================
+
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
-    /**
-     * Get a user by ID.
-     *
-     * @param id the user ID
-     * @return the user
-     */
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
 
-    /**
-     * Assign property access to a user.
-     * Used to grant assistants access to specific properties.
-     *
-     * @param accessDto the property access data
-     * @return the created PropertyAccess record
-     */
+    @GetMapping("/assistants")
+    public ResponseEntity<List<User>> getAssistants() {
+        User currentUser = getCurrentUser();
+        List<User> assistants = userService.getAssistants(currentUser.getId());
+        return ResponseEntity.ok(assistants);
+    }
+
+    // ==================== ACCESS MANAGEMENT ENDPOINTS ====================
+
     @PostMapping("/access")
     public ResponseEntity<PropertyAccess> assignPropertyAccess(@Valid @RequestBody PropertyAccessDto accessDto) {
         User currentUser = getCurrentUser();
@@ -79,5 +91,17 @@ public class UserController {
                 accessDto.getAccessLevel(),
                 currentUser.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(access);
+    }
+
+    @GetMapping("/{userId}/access")
+    public ResponseEntity<List<PropertyAccess>> getPropertyAccessByUser(@PathVariable Long userId) {
+        List<PropertyAccess> accessList = userService.getPropertyAccessByUser(userId);
+        return ResponseEntity.ok(accessList);
+    }
+
+    @DeleteMapping("/access/{accessId}")
+    public ResponseEntity<Void> revokeAccess(@PathVariable Long accessId) {
+        userService.revokeAccess(accessId);
+        return ResponseEntity.noContent().build();
     }
 }

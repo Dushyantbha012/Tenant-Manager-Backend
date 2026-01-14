@@ -1,5 +1,7 @@
 package com.dushy.tenantmanage.service.impl;
 
+import com.dushy.tenantmanage.dto.BulkFloorDto;
+import com.dushy.tenantmanage.dto.BulkRoomDto;
 import com.dushy.tenantmanage.dto.FloorDto;
 import com.dushy.tenantmanage.dto.PropertyDto;
 import com.dushy.tenantmanage.dto.RoomDto;
@@ -17,6 +19,7 @@ import com.dushy.tenantmanage.service.PropertyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,7 +47,6 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     public Properties createProperty(PropertyDto propertyDto, Long ownerId) {
-        // Validate owner exists
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", ownerId));
 
@@ -64,12 +66,30 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
+    public Properties updateProperty(Long id, PropertyDto propertyDto) {
+        Properties property = getPropertyById(id);
+        property.setName(propertyDto.getName());
+        property.setAddress(propertyDto.getAddress());
+        property.setCity(propertyDto.getCity());
+        property.setState(propertyDto.getState());
+        property.setPostalCode(propertyDto.getPostalCode());
+        property.setCountry(propertyDto.getCountry());
+        property.setTotalFloors(propertyDto.getTotalFloors());
+        return propertiesRepository.save(property);
+    }
+
+    @Override
+    public void deleteProperty(Long id) {
+        Properties property = getPropertyById(id);
+        property.setIsActive(false);
+        propertiesRepository.save(property);
+    }
+
+    @Override
     public Floor addFloor(FloorDto floorDto, Long propertyId) {
-        // Validate property exists
         Properties property = propertiesRepository.findById(propertyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Property", propertyId));
 
-        // Check for duplicate floor number
         if (floorRepository.findByPropertyIdAndFloorNumber(propertyId, floorDto.getFloorNumber()).isPresent()) {
             throw new DuplicateResourceException("Floor", "floor number", floorDto.getFloorNumber().toString());
         }
@@ -85,8 +105,29 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Floor getFloorById(Long id) {
+        return floorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Floor", id));
+    }
+
+    @Override
+    public Floor updateFloor(Long id, FloorDto floorDto) {
+        Floor floor = getFloorById(id);
+        floor.setFloorNumber(floorDto.getFloorNumber());
+        floor.setFloorName(floorDto.getFloorName());
+        return floorRepository.save(floor);
+    }
+
+    @Override
+    public void deleteFloor(Long id) {
+        Floor floor = getFloorById(id);
+        floor.setIsActive(false);
+        floorRepository.save(floor);
+    }
+
+    @Override
     public Room addRoom(RoomDto roomDto, Long floorId) {
-        // Validate floor exists
         Floor floor = floorRepository.findById(floorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Floor", floorId));
 
@@ -100,6 +141,29 @@ public class PropertyServiceImpl implements PropertyService {
                 .build();
 
         return roomRepository.save(room);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Room getRoomById(Long id) {
+        return roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room", id));
+    }
+
+    @Override
+    public Room updateRoom(Long id, RoomDto roomDto) {
+        Room room = getRoomById(id);
+        room.setRoomNumber(roomDto.getRoomNumber());
+        room.setRoomType(roomDto.getRoomType());
+        room.setSizeSqft(roomDto.getSizeSqft());
+        return roomRepository.save(room);
+    }
+
+    @Override
+    public void deleteRoom(Long id) {
+        Room room = getRoomById(id);
+        room.setIsActive(false);
+        roomRepository.save(room);
     }
 
     @Override
@@ -131,5 +195,58 @@ public class PropertyServiceImpl implements PropertyService {
     @Transactional(readOnly = true)
     public List<Room> getAvailableRoomsByFloor(Long floorId) {
         return roomRepository.findByFloorIdAndIsOccupiedFalse(floorId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Room> getRoomsByProperty(Long propertyId) {
+        return roomRepository.findByFloorPropertyId(propertyId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Room> getVacantRooms() {
+        return roomRepository.findByIsOccupiedFalseAndIsActiveTrue();
+    }
+
+    @Override
+    public List<Floor> bulkCreateFloors(BulkFloorDto bulkFloorDto) {
+        Properties property = propertiesRepository.findById(bulkFloorDto.getPropertyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Property", bulkFloorDto.getPropertyId()));
+
+        List<Floor> createdFloors = new ArrayList<>();
+        for (FloorDto floorDto : bulkFloorDto.getFloors()) {
+            if (floorRepository.findByPropertyIdAndFloorNumber(bulkFloorDto.getPropertyId(),
+                    floorDto.getFloorNumber()).isEmpty()) {
+                Floor floor = Floor.builder()
+                        .property(property)
+                        .floorNumber(floorDto.getFloorNumber())
+                        .floorName(floorDto.getFloorName())
+                        .isActive(true)
+                        .build();
+                createdFloors.add(floorRepository.save(floor));
+            }
+        }
+        return createdFloors;
+    }
+
+    @Override
+    public List<Room> bulkCreateRooms(BulkRoomDto bulkRoomDto) {
+        Floor floor = floorRepository.findById(bulkRoomDto.getFloorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Floor", bulkRoomDto.getFloorId()));
+
+        List<Room> createdRooms = new ArrayList<>();
+        for (RoomDto roomDto : bulkRoomDto.getRooms()) {
+            Room room = Room.builder()
+                    .floor(floor)
+                    .roomNumber(roomDto.getRoomNumber())
+                    .roomType(roomDto.getRoomType())
+                    .sizeSqft(roomDto.getSizeSqft())
+                    .isOccupied(false)
+                    .isActive(true)
+                    .build();
+            createdRooms.add(roomRepository.save(room));
+        }
+        return createdRooms;
     }
 }

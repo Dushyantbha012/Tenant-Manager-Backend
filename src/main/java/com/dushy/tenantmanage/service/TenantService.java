@@ -76,4 +76,39 @@ public interface TenantService {
      * @return optional containing the tenant if found
      */
     Optional<Tenant> getTenantByPhone(String phone);
+
+    /**
+     * Get all active tenants in a property.
+     *
+     * @param propertyId the property ID
+     * @return list of active tenants
+     */
+    List<Tenant> getTenantsByProperty(Long propertyId);
+
+    /**
+     * Update tenant information.
+     *
+     * @param id        the tenant ID
+     * @param tenantDto the updated data
+     * @return the updated tenant
+     */
+    Tenant updateTenant(Long id, TenantDto tenantDto);
+
+    /**
+     * Update rent agreement for a tenant.
+     *
+     * @param tenantId     the tenant ID
+     * @param agreementDto the updated agreement data
+     * @return the updated agreement
+     */
+    com.dushy.tenantmanage.entity.RentAgreement updateAgreement(Long tenantId, RentAgreementDto agreementDto);
+
+    /**
+     * Search tenants by name or phone.
+     *
+     * @param query      the search query
+     * @param propertyId optional property filter
+     * @return list of matching tenants
+     */
+    List<Tenant> searchTenants(String query, Long propertyId);
 }

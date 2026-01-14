@@ -44,4 +44,43 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
      * @return list of available rooms on the floor
      */
     List<Room> findByFloorIdAndIsOccupiedFalse(Long floorId);
+
+    /**
+     * Find all rooms in a property (through floor relationship).
+     *
+     * @param propertyId the ID of the property
+     * @return list of all rooms in the property
+     */
+    List<Room> findByFloorPropertyId(Long propertyId);
+
+    /**
+     * Find vacant rooms in a property.
+     *
+     * @param propertyId the ID of the property
+     * @return list of vacant rooms in the property
+     */
+    List<Room> findByFloorPropertyIdAndIsOccupiedFalseAndIsActiveTrue(Long propertyId);
+
+    /**
+     * Count total rooms in a property.
+     *
+     * @param propertyId the ID of the property
+     * @return total count of rooms
+     */
+    long countByFloorPropertyId(Long propertyId);
+
+    /**
+     * Count occupied rooms in a property.
+     *
+     * @param propertyId the ID of the property
+     * @return count of occupied rooms
+     */
+    long countByFloorPropertyIdAndIsOccupiedTrue(Long propertyId);
+
+    /**
+     * Count all active rooms.
+     *
+     * @return total count of active rooms
+     */
+    long countByIsActiveTrue();
 }

@@ -167,4 +167,45 @@ public class TenantServiceImpl implements TenantService {
     public Optional<Tenant> getTenantByPhone(String phone) {
         return tenantRepository.findByPhone(phone);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Tenant> getTenantsByProperty(Long propertyId) {
+        return tenantRepository.findByIsActiveTrueAndRoomFloorPropertyId(propertyId);
+    }
+
+    @Override
+    public Tenant updateTenant(Long id, TenantDto tenantDto) {
+        Tenant tenant = getTenantById(id);
+        tenant.setFullName(tenantDto.getFullName());
+        tenant.setEmail(tenantDto.getEmail());
+        tenant.setPhone(tenantDto.getPhone());
+        tenant.setIdProofType(tenantDto.getIdProofType());
+        tenant.setIdProofNumber(tenantDto.getIdProofNumber());
+        tenant.setEmergencyContactName(tenantDto.getEmergencyContactName());
+        tenant.setEmergencyContactPhone(tenantDto.getEmergencyContactPhone());
+        return tenantRepository.save(tenant);
+    }
+
+    @Override
+    public RentAgreement updateAgreement(Long tenantId, RentAgreementDto agreementDto) {
+        RentAgreement agreement = rentAgreementRepository.findByTenantIdAndIsActiveTrue(tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active RentAgreement for tenant", tenantId));
+
+        agreement.setMonthlyRentAmount(agreementDto.getMonthlyRentAmount());
+        agreement.setSecurityDeposit(agreementDto.getSecurityDeposit());
+        if (agreementDto.getPaymentDueDay() != null) {
+            agreement.setPaymentDueDay(agreementDto.getPaymentDueDay());
+        }
+        return rentAgreementRepository.save(agreement);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Tenant> searchTenants(String query, Long propertyId) {
+        if (propertyId != null) {
+            return tenantRepository.searchByPropertyId(query, propertyId);
+        }
+        return tenantRepository.findByFullNameContainingIgnoreCaseOrPhoneContaining(query, query);
+    }
 }

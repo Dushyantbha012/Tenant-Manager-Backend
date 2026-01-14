@@ -54,4 +54,44 @@ public interface RentPaymentRepository extends JpaRepository<RentPayment, Long> 
     @Query("SELECT SUM(rp.amountPaid) FROM RentPayment rp WHERE rp.tenant.id = :tenantId AND rp.paymentForMonth = :month")
     BigDecimal sumAmountPaidByTenantIdAndPaymentForMonth(@Param("tenantId") Long tenantId,
             @Param("month") LocalDate month);
+
+    /**
+     * Find payments within a date range.
+     *
+     * @param startDate start of date range
+     * @param endDate   end of date range
+     * @return list of payments within the range
+     */
+    List<RentPayment> findByPaymentDateBetween(LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Sum all payments for a specific month.
+     *
+     * @param month the month to sum for
+     * @return total amount collected
+     */
+    @Query("SELECT COALESCE(SUM(rp.amountPaid), 0) FROM RentPayment rp WHERE rp.paymentForMonth = :month")
+    BigDecimal sumAmountPaidByPaymentForMonth(@Param("month") LocalDate month);
+
+    /**
+     * Find payments by property for a specific month.
+     *
+     * @param propertyId the property ID
+     * @param month      the month to filter by
+     * @return list of payments
+     */
+    @Query("SELECT rp FROM RentPayment rp WHERE rp.tenant.room.floor.property.id = :propertyId AND rp.paymentForMonth = :month")
+    List<RentPayment> findByPropertyIdAndPaymentForMonth(@Param("propertyId") Long propertyId,
+            @Param("month") LocalDate month);
+
+    /**
+     * Sum payments for a property in a specific month.
+     *
+     * @param propertyId the property ID
+     * @param month      the month
+     * @return total collected
+     */
+    @Query("SELECT COALESCE(SUM(rp.amountPaid), 0) FROM RentPayment rp WHERE rp.tenant.room.floor.property.id = :propertyId AND rp.paymentForMonth = :month")
+    BigDecimal sumAmountPaidByPropertyIdAndPaymentForMonth(@Param("propertyId") Long propertyId,
+            @Param("month") LocalDate month);
 }

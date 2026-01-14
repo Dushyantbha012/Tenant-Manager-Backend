@@ -1,5 +1,6 @@
 package com.dushy.tenantmanage.service;
 
+import com.dushy.tenantmanage.dto.UpdatePasswordDto;
 import com.dushy.tenantmanage.dto.UserDto;
 import com.dushy.tenantmanage.entity.PropertyAccess;
 import com.dushy.tenantmanage.entity.User;
@@ -16,53 +17,71 @@ public interface UserService {
 
     /**
      * Register a new user (Owner or Assistant).
-     * Password is hashed before storage.
-     *
-     * @param userDto the user registration data
-     * @return the created user
      */
     User registerUser(UserDto userDto);
 
     /**
      * Authenticate a user by email and password.
-     *
-     * @param email    the user's email
-     * @param password the raw password
-     * @return the authenticated user
      */
     User authenticate(String email, String password);
 
     /**
-     * Assign property-specific access to a user (typically an assistant).
-     *
-     * @param propertyId  the ID of the property
-     * @param userId      the ID of the user to grant access
-     * @param accessLevel the access level (READ, WRITE, ADMIN)
-     * @param grantedById the ID of the user granting access
-     * @return the created PropertyAccess record
+     * Assign property-specific access to a user.
      */
     PropertyAccess assignPropertyAccess(Long propertyId, Long userId, AccessLevel accessLevel, Long grantedById);
 
     /**
      * Get a user by ID.
-     *
-     * @param id the user ID
-     * @return the user
      */
     User getUserById(Long id);
 
     /**
      * Find a user by email.
-     *
-     * @param email the user's email
-     * @return optional containing the user if found
      */
     Optional<User> getUserByEmail(String email);
 
     /**
      * Get all users in the system.
-     *
-     * @return list of all users
      */
     List<User> getAllUsers();
+
+    /**
+     * Update user profile.
+     *
+     * @param userId  the user ID
+     * @param userDto the updated profile data
+     * @return the updated user
+     */
+    User updateProfile(Long userId, UserDto userDto);
+
+    /**
+     * Change user password.
+     *
+     * @param userId      the user ID
+     * @param passwordDto the password change data
+     */
+    void changePassword(Long userId, UpdatePasswordDto passwordDto);
+
+    /**
+     * Get all assistants (users created by an owner).
+     *
+     * @param ownerId the owner's user ID
+     * @return list of assistant users
+     */
+    List<User> getAssistants(Long ownerId);
+
+    /**
+     * Get property access entries for a user.
+     *
+     * @param userId the user ID
+     * @return list of property access records
+     */
+    List<PropertyAccess> getPropertyAccessByUser(Long userId);
+
+    /**
+     * Revoke property access.
+     *
+     * @param accessId the access record ID
+     */
+    void revokeAccess(Long accessId);
 }
