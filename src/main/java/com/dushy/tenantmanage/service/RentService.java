@@ -4,6 +4,7 @@ import com.dushy.tenantmanage.dto.BulkPaymentDto;
 import com.dushy.tenantmanage.dto.DueRentDto;
 import com.dushy.tenantmanage.dto.RentAgreementDto;
 import com.dushy.tenantmanage.dto.RentPaymentDto;
+import com.dushy.tenantmanage.dto.RentPaymentResponseDto;
 import com.dushy.tenantmanage.dto.RentSummaryDto;
 import com.dushy.tenantmanage.entity.RentAgreement;
 import com.dushy.tenantmanage.entity.RentPayment;
@@ -74,6 +75,19 @@ public interface RentService {
      * @return list of payments
      */
     List<RentPayment> searchPayments(LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Search payments with optional property and room filters.
+     * Returns flattened DTOs suitable for frontend display.
+     *
+     * @param startDate  start date
+     * @param endDate    end date
+     * @param propertyId optional property filter
+     * @param roomId     optional room filter
+     * @return list of payment response DTOs
+     */
+    List<RentPaymentResponseDto> searchPaymentsWithFilters(LocalDate startDate, LocalDate endDate, Long propertyId,
+            Long roomId);
 
     /**
      * Record multiple payments in bulk.

@@ -3,6 +3,7 @@ package com.dushy.tenantmanage.controller;
 import com.dushy.tenantmanage.dto.BulkPaymentDto;
 import com.dushy.tenantmanage.dto.DueRentDto;
 import com.dushy.tenantmanage.dto.RentPaymentDto;
+import com.dushy.tenantmanage.dto.RentPaymentResponseDto;
 import com.dushy.tenantmanage.dto.RentSummaryDto;
 import com.dushy.tenantmanage.entity.RentAgreement;
 import com.dushy.tenantmanage.entity.RentPayment;
@@ -89,17 +90,21 @@ public class RentController {
     }
 
     @GetMapping("/payments/search")
-    public ResponseEntity<List<RentPayment>> searchPayments(
+    public ResponseEntity<List<RentPaymentResponseDto>> searchPayments(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Long propertyId,
+            @RequestParam(required = false) Long roomId) {
         User currentUser = getCurrentUser();
-        // Get all payments and filter by accessible properties
-        List<RentPayment> allPayments = rentService.searchPayments(startDate, endDate);
         Set<Long> accessiblePropertyIds = authorizationService.getAccessiblePropertyIds(currentUser.getId());
 
-        List<RentPayment> accessiblePayments = allPayments.stream()
-                .filter(payment -> accessiblePropertyIds.contains(
-                        payment.getTenant().getRoom().getFloor().getProperty().getId()))
+        // Get payments with filters
+        List<RentPaymentResponseDto> allPayments = rentService.searchPaymentsWithFilters(startDate, endDate, propertyId,
+                roomId);
+
+        // Filter by accessible properties
+        List<RentPaymentResponseDto> accessiblePayments = allPayments.stream()
+                .filter(payment -> accessiblePropertyIds.contains(payment.getPropertyId()))
                 .toList();
         return ResponseEntity.ok(accessiblePayments);
     }

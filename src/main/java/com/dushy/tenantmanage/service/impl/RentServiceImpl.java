@@ -4,6 +4,7 @@ import com.dushy.tenantmanage.dto.BulkPaymentDto;
 import com.dushy.tenantmanage.dto.DueRentDto;
 import com.dushy.tenantmanage.dto.RentAgreementDto;
 import com.dushy.tenantmanage.dto.RentPaymentDto;
+import com.dushy.tenantmanage.dto.RentPaymentResponseDto;
 import com.dushy.tenantmanage.dto.RentSummaryDto;
 import com.dushy.tenantmanage.entity.RentAgreement;
 import com.dushy.tenantmanage.entity.RentPayment;
@@ -230,6 +231,52 @@ public class RentServiceImpl implements RentService {
     @Transactional(readOnly = true)
     public List<RentPayment> searchPayments(LocalDate startDate, LocalDate endDate) {
         return rentPaymentRepository.findByPaymentDateBetween(startDate, endDate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RentPaymentResponseDto> searchPaymentsWithFilters(LocalDate startDate, LocalDate endDate,
+            Long propertyId, Long roomId) {
+        List<RentPayment> payments;
+
+        // Apply appropriate filter based on provided parameters
+        if (propertyId != null && roomId != null) {
+            payments = rentPaymentRepository.findByPaymentDateBetweenAndPropertyIdAndRoomId(startDate, endDate,
+                    propertyId, roomId);
+        } else if (propertyId != null) {
+            payments = rentPaymentRepository.findByPaymentDateBetweenAndPropertyId(startDate, endDate, propertyId);
+        } else if (roomId != null) {
+            payments = rentPaymentRepository.findByPaymentDateBetweenAndRoomId(startDate, endDate, roomId);
+        } else {
+            payments = rentPaymentRepository.findByPaymentDateBetween(startDate, endDate);
+        }
+
+        // Map to response DTO with flattened fields
+        return payments.stream()
+                .map(this::mapToResponseDto)
+                .toList();
+    }
+
+    /**
+     * Maps a RentPayment entity to RentPaymentResponseDto with flattened fields.
+     */
+    private RentPaymentResponseDto mapToResponseDto(RentPayment payment) {
+        Tenant tenant = payment.getTenant();
+        return RentPaymentResponseDto.builder()
+                .id(payment.getId())
+                .amountPaid(payment.getAmountPaid())
+                .paymentDate(payment.getPaymentDate())
+                .paymentForMonth(payment.getPaymentForMonth())
+                .paymentMode(payment.getPaymentMode())
+                .transactionReference(payment.getTransactionReference())
+                .notes(payment.getNotes())
+                .tenantId(tenant.getId())
+                .tenantName(tenant.getFullName())
+                .propertyId(tenant.getRoom().getFloor().getProperty().getId())
+                .propertyName(tenant.getRoom().getFloor().getProperty().getName())
+                .roomId(tenant.getRoom().getId())
+                .roomNumber(tenant.getRoom().getRoomNumber())
+                .build();
     }
 
     @Override

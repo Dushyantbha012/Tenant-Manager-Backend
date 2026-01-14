@@ -214,10 +214,27 @@ Get payments for a specific month.
 - **Filtering**: Returns only payments for properties the user has access to.
 
 #### **GET** `/api/rent/payments/search`
-Search payments by date range.
+Search payments by date range with optional filters.
 - **Query Parameters:**
-  - `startDate`, `endDate` (Date) - **Required**
+  - `startDate` (Date) - **Required**: Start of date range (yyyy-MM-dd)
+  - `endDate` (Date) - **Required**: End of date range (yyyy-MM-dd)
+  - `propertyId` (Long) - *Optional*: Filter by property ID
+  - `roomId` (Long) - *Optional*: Filter by room ID
 - **Filtering**: Returns only payments for properties the user has access to.
+- **Response (`RentPaymentResponseDto`):**
+  - `id` (Long): Payment ID
+  - `amountPaid` (Decimal): Amount paid
+  - `paymentDate` (Date): When payment was made
+  - `paymentForMonth` (Date): Month the payment is for
+  - `paymentMode` (Enum): `CASH`, `UPI`, `CARD`, etc.
+  - `transactionReference` (String): Transaction reference
+  - `notes` (String): Payment notes
+  - `tenantId` (Long): Tenant ID
+  - `tenantName` (String): Tenant's full name
+  - `propertyId` (Long): Property ID
+  - `propertyName` (String): Property name
+  - `roomId` (Long): Room ID
+  - `roomNumber` (String): Room number
 
 #### **POST** `/api/rent/payments/bulk`
 Bulk record multiple payments.
