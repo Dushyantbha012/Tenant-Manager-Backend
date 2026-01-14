@@ -20,6 +20,8 @@ public class DueRentDto {
     private Long tenantId;
     private String tenantName;
     private String roomNumber;
+    private Long propertyId;
+    private String propertyName;
     private BigDecimal expectedAmount;
     private BigDecimal paidAmount;
     private BigDecimal dueAmount;

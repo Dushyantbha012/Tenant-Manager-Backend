@@ -148,6 +148,61 @@ public class DashboardServiceImpl implements DashboardService {
         return trends;
     }
 
+    @Override
+    public List<TrendDataDto> getRentTrendsForUser(Long userId, int months) {
+        List<TrendDataDto> trends = new ArrayList<>();
+        LocalDate startMonth = LocalDate.now().withDayOfMonth(1).minusMonths(months - 1);
+
+        // Get user's accessible properties
+        List<Properties> userProperties = propertiesRepository.findByOwnerId(userId);
+
+        for (int i = 0; i < months; i++) {
+            LocalDate month = startMonth.plusMonths(i);
+            BigDecimal collected = BigDecimal.ZERO;
+
+            // Sum payments across user's properties
+            for (Properties property : userProperties) {
+                BigDecimal propertyCollected = rentPaymentRepository
+                        .sumAmountPaidByPropertyIdAndPaymentForMonth(property.getId(), month);
+                if (propertyCollected != null) {
+                    collected = collected.add(propertyCollected);
+                }
+            }
+
+            trends.add(new TrendDataDto(month, collected));
+        }
+
+        return trends;
+    }
+
+    @Override
+    public List<TrendDataDto> getOccupancyTrendsForUser(Long userId, int months) {
+        List<TrendDataDto> trends = new ArrayList<>();
+        LocalDate startMonth = LocalDate.now().withDayOfMonth(1).minusMonths(months - 1);
+
+        // Get user's accessible properties
+        List<Properties> userProperties = propertiesRepository.findByOwnerId(userId);
+
+        long totalRooms = 0;
+        long occupiedRooms = 0;
+
+        for (Properties property : userProperties) {
+            totalRooms += roomRepository.countByFloorPropertyId(property.getId());
+            occupiedRooms += roomRepository.countByFloorPropertyIdAndIsOccupiedTrue(property.getId());
+        }
+
+        BigDecimal occupancyRate = totalRooms > 0
+                ? BigDecimal.valueOf((double) occupiedRooms / totalRooms * 100)
+                : BigDecimal.ZERO;
+
+        for (int i = 0; i < months; i++) {
+            LocalDate month = startMonth.plusMonths(i);
+            trends.add(new TrendDataDto(month, occupancyRate));
+        }
+
+        return trends;
+    }
+
     private BigDecimal calculateTotalExpectedRent() {
         List<Tenant> allTenants = tenantRepository.findByIsActiveTrue();
         BigDecimal total = BigDecimal.ZERO;
