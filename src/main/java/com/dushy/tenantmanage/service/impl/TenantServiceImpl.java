@@ -2,6 +2,7 @@ package com.dushy.tenantmanage.service.impl;
 
 import com.dushy.tenantmanage.dto.RentAgreementDto;
 import com.dushy.tenantmanage.dto.TenantDto;
+import com.dushy.tenantmanage.dto.TenantResponseDto;
 import com.dushy.tenantmanage.entity.RentAgreement;
 import com.dushy.tenantmanage.entity.Room;
 import com.dushy.tenantmanage.entity.Tenant;
@@ -207,5 +208,84 @@ public class TenantServiceImpl implements TenantService {
             return tenantRepository.searchByPropertyId(query, propertyId);
         }
         return tenantRepository.findByFullNameContainingIgnoreCaseOrPhoneContaining(query, query);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TenantResponseDto toResponseDto(Tenant tenant) {
+        if (tenant == null) {
+            return null;
+        }
+
+        Room room = tenant.getRoom();
+        Long propertyId = null;
+        String propertyName = null;
+        String roomNumber = null;
+        Long roomId = null;
+
+        if (room != null) {
+            roomId = room.getId();
+            roomNumber = room.getRoomNumber();
+            if (room.getFloor() != null && room.getFloor().getProperty() != null) {
+                propertyId = room.getFloor().getProperty().getId();
+                propertyName = room.getFloor().getProperty().getName();
+            }
+        }
+
+        // Get active rent agreement info
+        java.math.BigDecimal rentAmount = null;
+        java.math.BigDecimal securityDeposit = null;
+        Integer paymentDueDay = null;
+
+        java.util.Optional<RentAgreement> activeAgreement = rentAgreementRepository
+                .findByTenantIdAndIsActiveTrue(tenant.getId());
+        if (activeAgreement.isPresent()) {
+            RentAgreement agreement = activeAgreement.get();
+            rentAmount = agreement.getMonthlyRentAmount();
+            securityDeposit = agreement.getSecurityDeposit();
+            paymentDueDay = agreement.getPaymentDueDay();
+        }
+
+        return TenantResponseDto.builder()
+                .id(tenant.getId())
+                .fullName(tenant.getFullName())
+                .email(tenant.getEmail())
+                .phone(tenant.getPhone())
+                .idProofType(tenant.getIdProofType())
+                .idProofNumber(tenant.getIdProofNumber())
+                .emergencyContactName(tenant.getEmergencyContactName())
+                .emergencyContactPhone(tenant.getEmergencyContactPhone())
+                .moveInDate(tenant.getMoveInDate())
+                .moveOutDate(tenant.getMoveOutDate())
+                .isActive(tenant.getIsActive())
+                .status(Boolean.TRUE.equals(tenant.getIsActive()) ? "ACTIVE" : "MOVED_OUT")
+                .createdAt(tenant.getCreatedAt())
+                .updatedAt(tenant.getUpdatedAt())
+                .roomId(roomId)
+                .roomNumber(roomNumber)
+                .propertyId(propertyId)
+                .propertyName(propertyName)
+                .rentAmount(rentAmount)
+                .securityDeposit(securityDeposit)
+                .paymentDueDay(paymentDueDay)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TenantResponseDto> toResponseDtos(List<Tenant> tenants) {
+        if (tenants == null || tenants.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return tenants.stream()
+                .map(this::toResponseDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TenantResponseDto> getTenantHistoryByRoom(Long roomId) {
+        List<Tenant> allTenants = tenantRepository.findByRoomIdOrderByMoveInDateDesc(roomId);
+        return toResponseDtos(allTenants);
     }
 }

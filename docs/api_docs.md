@@ -155,6 +155,7 @@ Bulk create multiple rooms.
 | PUT | `/api/tenants/{id}/agreement` | Update agreement (Write Access required) |
 | GET | `/api/tenants/search` | Search accessible tenants |
 | GET | `/api/rooms/{roomId}/tenant` | Get room tenant (Read Access required) |
+| GET | `/api/rooms/{roomId}/tenant-history` | Get tenant history for room (Read Access required) |
 
 ### **POST** `/api/tenants`
 Move-in a new tenant.

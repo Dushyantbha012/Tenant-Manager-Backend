@@ -2,6 +2,7 @@ package com.dushy.tenantmanage.controller;
 
 import com.dushy.tenantmanage.dto.RentAgreementDto;
 import com.dushy.tenantmanage.dto.TenantDto;
+import com.dushy.tenantmanage.dto.TenantResponseDto;
 import com.dushy.tenantmanage.dto.request.CreateTenantRequest;
 import com.dushy.tenantmanage.dto.request.SwapTenantRequest;
 import com.dushy.tenantmanage.entity.RentAgreement;
@@ -47,7 +48,7 @@ public class TenantController {
     }
 
     @PostMapping("/tenants")
-    public ResponseEntity<Tenant> addTenant(@Valid @RequestBody CreateTenantRequest request) {
+    public ResponseEntity<TenantResponseDto> addTenant(@Valid @RequestBody CreateTenantRequest request) {
         User currentUser = getCurrentUser();
         // Require write access to the room's property
         Long propertyId = authorizationService.getPropertyIdFromRoom(request.getRoomId());
@@ -58,11 +59,11 @@ public class TenantController {
                 request.getRoomId(),
                 request.getAgreement(),
                 currentUser.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(tenant);
+        return ResponseEntity.status(HttpStatus.CREATED).body(tenantService.toResponseDto(tenant));
     }
 
     @GetMapping("/tenants")
-    public ResponseEntity<List<Tenant>> getActiveTenants() {
+    public ResponseEntity<List<TenantResponseDto>> getActiveTenants() {
         User currentUser = getCurrentUser();
         // Get all active tenants, then filter by accessible properties
         List<Tenant> allTenants = tenantService.getActiveTenants();
@@ -72,22 +73,22 @@ public class TenantController {
                 .filter(tenant -> accessiblePropertyIds.contains(
                         tenant.getRoom().getFloor().getProperty().getId()))
                 .toList();
-        return ResponseEntity.ok(accessibleTenants);
+        return ResponseEntity.ok(tenantService.toResponseDtos(accessibleTenants));
     }
 
     @GetMapping("/tenants/{id}")
-    public ResponseEntity<Tenant> getTenantById(@PathVariable Long id) {
+    public ResponseEntity<TenantResponseDto> getTenantById(@PathVariable Long id) {
         User currentUser = getCurrentUser();
         // Check access via tenant's property
         Long propertyId = authorizationService.getPropertyIdFromTenant(id);
         authorizationService.checkPropertyAccess(currentUser.getId(), propertyId);
 
         Tenant tenant = tenantService.getTenantById(id);
-        return ResponseEntity.ok(tenant);
+        return ResponseEntity.ok(tenantService.toResponseDto(tenant));
     }
 
     @PutMapping("/tenants/{id}")
-    public ResponseEntity<Tenant> updateTenant(@PathVariable Long id,
+    public ResponseEntity<TenantResponseDto> updateTenant(@PathVariable Long id,
             @Valid @RequestBody TenantDto tenantDto) {
         User currentUser = getCurrentUser();
         // Require write access to tenant's property
@@ -95,22 +96,22 @@ public class TenantController {
         authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
 
         Tenant tenant = tenantService.updateTenant(id, tenantDto);
-        return ResponseEntity.ok(tenant);
+        return ResponseEntity.ok(tenantService.toResponseDto(tenant));
     }
 
     @DeleteMapping("/tenants/{id}")
-    public ResponseEntity<Tenant> moveOutTenant(@PathVariable Long id) {
+    public ResponseEntity<TenantResponseDto> moveOutTenant(@PathVariable Long id) {
         User currentUser = getCurrentUser();
         // Require write access to tenant's property
         Long propertyId = authorizationService.getPropertyIdFromTenant(id);
         authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
 
         Tenant tenant = tenantService.moveOutTenant(id);
-        return ResponseEntity.ok(tenant);
+        return ResponseEntity.ok(tenantService.toResponseDto(tenant));
     }
 
     @PostMapping("/tenants/{id}/swap")
-    public ResponseEntity<Tenant> swapTenant(@PathVariable Long id,
+    public ResponseEntity<TenantResponseDto> swapTenant(@PathVariable Long id,
             @Valid @RequestBody SwapTenantRequest request) {
         User currentUser = getCurrentUser();
         // Require write access to tenant's property
@@ -122,7 +123,7 @@ public class TenantController {
                 request.getNewTenant(),
                 request.getAgreement(),
                 currentUser.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(newTenant);
+        return ResponseEntity.status(HttpStatus.CREATED).body(tenantService.toResponseDto(newTenant));
     }
 
     @PutMapping("/tenants/{id}/agreement")
@@ -138,7 +139,7 @@ public class TenantController {
     }
 
     @GetMapping("/tenants/search")
-    public ResponseEntity<List<Tenant>> searchTenants(
+    public ResponseEntity<List<TenantResponseDto>> searchTenants(
             @RequestParam String query,
             @RequestParam(required = false) Long propertyId) {
         User currentUser = getCurrentUser();
@@ -147,7 +148,7 @@ public class TenantController {
             // If searching in a specific property, check access
             authorizationService.checkPropertyAccess(currentUser.getId(), propertyId);
             List<Tenant> tenants = tenantService.searchTenants(query, propertyId);
-            return ResponseEntity.ok(tenants);
+            return ResponseEntity.ok(tenantService.toResponseDtos(tenants));
         }
 
         // Search across all tenants, then filter by accessible properties
@@ -158,28 +159,39 @@ public class TenantController {
                 .filter(tenant -> accessiblePropertyIds.contains(
                         tenant.getRoom().getFloor().getProperty().getId()))
                 .toList();
-        return ResponseEntity.ok(accessibleTenants);
+        return ResponseEntity.ok(tenantService.toResponseDtos(accessibleTenants));
     }
 
     @GetMapping("/properties/{propertyId}/tenants")
-    public ResponseEntity<List<Tenant>> getTenantsByProperty(@PathVariable Long propertyId) {
+    public ResponseEntity<List<TenantResponseDto>> getTenantsByProperty(@PathVariable Long propertyId) {
         User currentUser = getCurrentUser();
         // Check access to the property
         authorizationService.checkPropertyAccess(currentUser.getId(), propertyId);
 
         List<Tenant> tenants = tenantService.getTenantsByProperty(propertyId);
-        return ResponseEntity.ok(tenants);
+        return ResponseEntity.ok(tenantService.toResponseDtos(tenants));
     }
 
     @GetMapping("/rooms/{roomId}/tenant")
-    public ResponseEntity<Tenant> getActiveTenantByRoom(@PathVariable Long roomId) {
+    public ResponseEntity<TenantResponseDto> getActiveTenantByRoom(@PathVariable Long roomId) {
         User currentUser = getCurrentUser();
         // Check access via room's property
         Long propertyId = authorizationService.getPropertyIdFromRoom(roomId);
         authorizationService.checkPropertyAccess(currentUser.getId(), propertyId);
 
         Optional<Tenant> tenant = tenantService.getActiveTenantByRoom(roomId);
-        return tenant.map(ResponseEntity::ok)
+        return tenant.map(t -> ResponseEntity.ok(tenantService.toResponseDto(t)))
                 .orElse(ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/rooms/{roomId}/tenant-history")
+    public ResponseEntity<List<TenantResponseDto>> getTenantHistoryByRoom(@PathVariable Long roomId) {
+        User currentUser = getCurrentUser();
+        // Check access via room's property
+        Long propertyId = authorizationService.getPropertyIdFromRoom(roomId);
+        authorizationService.checkPropertyAccess(currentUser.getId(), propertyId);
+
+        List<TenantResponseDto> history = tenantService.getTenantHistoryByRoom(roomId);
+        return ResponseEntity.ok(history);
     }
 }

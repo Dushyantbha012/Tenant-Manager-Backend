@@ -2,12 +2,15 @@ package com.dushy.tenantmanage.service.impl;
 
 import com.dushy.tenantmanage.dto.BulkFloorDto;
 import com.dushy.tenantmanage.dto.BulkRoomDto;
+import com.dushy.tenantmanage.dto.DueRentDto;
 import com.dushy.tenantmanage.dto.FloorDto;
 import com.dushy.tenantmanage.dto.PropertyDto;
 import com.dushy.tenantmanage.dto.RoomDto;
+import com.dushy.tenantmanage.dto.RoomInfoDto;
 import com.dushy.tenantmanage.entity.Floor;
 import com.dushy.tenantmanage.entity.Properties;
 import com.dushy.tenantmanage.entity.Room;
+import com.dushy.tenantmanage.entity.Tenant;
 import com.dushy.tenantmanage.entity.User;
 import com.dushy.tenantmanage.exception.DuplicateResourceException;
 import com.dushy.tenantmanage.exception.ResourceNotFoundException;
@@ -16,11 +19,16 @@ import com.dushy.tenantmanage.repository.PropertiesRepository;
 import com.dushy.tenantmanage.repository.RoomRepository;
 import com.dushy.tenantmanage.repository.UserRepository;
 import com.dushy.tenantmanage.service.PropertyService;
+import com.dushy.tenantmanage.service.RentService;
+import com.dushy.tenantmanage.service.TenantService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Implementation of PropertyService.
@@ -34,15 +42,21 @@ public class PropertyServiceImpl implements PropertyService {
     private final FloorRepository floorRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final TenantService tenantService;
+    private final RentService rentService;
 
     public PropertyServiceImpl(PropertiesRepository propertiesRepository,
             FloorRepository floorRepository,
             RoomRepository roomRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            TenantService tenantService,
+            RentService rentService) {
         this.propertiesRepository = propertiesRepository;
         this.floorRepository = floorRepository;
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
+        this.tenantService = tenantService;
+        this.rentService = rentService;
     }
 
     @Override
@@ -248,5 +262,53 @@ public class PropertyServiceImpl implements PropertyService {
             createdRooms.add(roomRepository.save(room));
         }
         return createdRooms;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoomInfoDto> getRoomsInfoByFloor(Long floorId) {
+        List<Room> rooms = getRoomsByFloor(floorId);
+        List<RoomInfoDto> roomInfoList = new ArrayList<>();
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+
+        for (Room room : rooms) {
+            RoomInfoDto.RoomInfoDtoBuilder builder = RoomInfoDto.builder()
+                    .id(room.getId())
+                    .roomNumber(room.getRoomNumber())
+                    .roomType(room.getRoomType())
+                    .sizeSqft(room.getSizeSqft())
+                    .isOccupied(room.getIsOccupied());
+
+            if (Boolean.TRUE.equals(room.getIsOccupied())) {
+                // Get active tenant for this room
+                Optional<Tenant> tenantOpt = tenantService.getActiveTenantByRoom(room.getId());
+                if (tenantOpt.isPresent()) {
+                    Tenant tenant = tenantOpt.get();
+                    builder.tenantId(tenant.getId())
+                            .tenantName(tenant.getFullName());
+
+                    // Calculate due for current month
+                    DueRentDto dueInfo = rentService.calculateDueRent(tenant.getId(), currentMonth);
+                    BigDecimal dueAmount = dueInfo != null ? dueInfo.getDueAmount() : BigDecimal.ZERO;
+                    builder.dueAmount(dueAmount);
+
+                    if (dueAmount != null && dueAmount.compareTo(BigDecimal.ZERO) > 0) {
+                        builder.paymentStatus("due");
+                    } else {
+                        builder.paymentStatus("paid");
+                    }
+                } else {
+                    builder.paymentStatus("vacant")
+                            .dueAmount(BigDecimal.ZERO);
+                }
+            } else {
+                builder.paymentStatus("vacant")
+                        .dueAmount(BigDecimal.ZERO);
+            }
+
+            roomInfoList.add(builder.build());
+        }
+
+        return roomInfoList;
     }
 }

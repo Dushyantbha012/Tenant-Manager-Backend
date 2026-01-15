@@ -124,13 +124,33 @@ public class RentServiceImpl implements RentService {
         RentAgreement agreement = rentAgreementRepository.findByTenantIdAndIsActiveTrue(tenantId)
                 .orElseThrow(() -> new InvalidOperationException("No active rent agreement found for tenant"));
 
-        BigDecimal expectedAmount = agreement.getMonthlyRentAmount();
-        BigDecimal paidAmount = rentPaymentRepository.sumAmountPaidByTenantIdAndPaymentForMonth(tenantId, month);
+        // Calculate total expected amount from agreement start date to requested month
+        LocalDate startMonth = agreement.getStartDate().withDayOfMonth(1);
+        LocalDate endMonth = month.withDayOfMonth(1);
+
+        // Count number of months from start to end (inclusive)
+        int totalMonths = 0;
+        LocalDate current = startMonth;
+        while (!current.isAfter(endMonth)) {
+            totalMonths++;
+            current = current.plusMonths(1);
+        }
+
+        BigDecimal monthlyRent = agreement.getMonthlyRentAmount();
+        BigDecimal expectedAmount = monthlyRent.multiply(BigDecimal.valueOf(totalMonths));
+
+        // Get total paid amount from start to end month
+        BigDecimal paidAmount = rentPaymentRepository.sumAmountPaidByTenantIdBetweenMonths(
+                tenantId, startMonth, endMonth);
         if (paidAmount == null) {
             paidAmount = BigDecimal.ZERO;
         }
 
         BigDecimal dueAmount = expectedAmount.subtract(paidAmount);
+        // Don't show negative dues (overpayment)
+        if (dueAmount.compareTo(BigDecimal.ZERO) < 0) {
+            dueAmount = BigDecimal.ZERO;
+        }
 
         return DueRentDto.builder()
                 .tenantId(tenantId)
@@ -150,6 +170,7 @@ public class RentServiceImpl implements RentService {
     public List<DueRentDto> getDueRentReport(LocalDate month) {
         List<DueRentDto> report = new ArrayList<>();
         List<Tenant> activeTenants = tenantRepository.findByIsActiveTrue();
+        LocalDate monthStart = month.withDayOfMonth(1);
 
         for (Tenant tenant : activeTenants) {
             Optional<RentAgreement> agreementOpt = rentAgreementRepository
@@ -157,6 +178,13 @@ public class RentServiceImpl implements RentService {
 
             if (agreementOpt.isPresent()) {
                 RentAgreement agreement = agreementOpt.get();
+
+                // Skip tenants who moved in after the requested month
+                LocalDate agreementStartMonth = agreement.getStartDate().withDayOfMonth(1);
+                if (agreementStartMonth.isAfter(monthStart)) {
+                    continue; // Tenant wasn't living here in this month
+                }
+
                 BigDecimal expectedAmount = agreement.getMonthlyRentAmount();
 
                 BigDecimal paidAmount = rentPaymentRepository

@@ -84,4 +84,14 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
      * @return count of active tenants
      */
     long countByIsActiveTrue();
+
+    /**
+     * Find all tenants (active and inactive) for a room, ordered by move-in date
+     * descending.
+     * Used for tenant history.
+     *
+     * @param roomId the ID of the room
+     * @return list of all tenants for the room
+     */
+    List<Tenant> findByRoomIdOrderByMoveInDateDesc(Long roomId);
 }

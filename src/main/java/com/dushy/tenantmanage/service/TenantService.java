@@ -111,4 +111,28 @@ public interface TenantService {
      * @return list of matching tenants
      */
     List<Tenant> searchTenants(String query, Long propertyId);
+
+    /**
+     * Convert a Tenant entity to TenantResponseDto.
+     *
+     * @param tenant the tenant entity
+     * @return the response DTO with flattened fields
+     */
+    com.dushy.tenantmanage.dto.TenantResponseDto toResponseDto(Tenant tenant);
+
+    /**
+     * Convert a list of Tenant entities to TenantResponseDtos.
+     *
+     * @param tenants the tenant entities
+     * @return list of response DTOs
+     */
+    List<com.dushy.tenantmanage.dto.TenantResponseDto> toResponseDtos(List<Tenant> tenants);
+
+    /**
+     * Get tenant history for a room (all tenants, including moved out).
+     *
+     * @param roomId the room ID
+     * @return list of tenant DTOs for the room
+     */
+    List<com.dushy.tenantmanage.dto.TenantResponseDto> getTenantHistoryByRoom(Long roomId);
 }

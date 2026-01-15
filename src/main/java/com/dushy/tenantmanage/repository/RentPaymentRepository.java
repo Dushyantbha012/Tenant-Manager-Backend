@@ -56,6 +56,20 @@ public interface RentPaymentRepository extends JpaRepository<RentPayment, Long> 
                         @Param("month") LocalDate month);
 
         /**
+         * Calculate total amount paid by a tenant between two months (inclusive).
+         * Used for cumulative due calculation.
+         *
+         * @param tenantId   the ID of the tenant
+         * @param startMonth first month of the range
+         * @param endMonth   last month of the range
+         * @return total amount paid, or null if no payments found
+         */
+        @Query("SELECT SUM(rp.amountPaid) FROM RentPayment rp WHERE rp.tenant.id = :tenantId AND rp.paymentForMonth >= :startMonth AND rp.paymentForMonth <= :endMonth")
+        BigDecimal sumAmountPaidByTenantIdBetweenMonths(@Param("tenantId") Long tenantId,
+                        @Param("startMonth") LocalDate startMonth,
+                        @Param("endMonth") LocalDate endMonth);
+
+        /**
          * Find payments within a date range.
          *
          * @param startDate start of date range

@@ -5,6 +5,7 @@ import com.dushy.tenantmanage.dto.BulkRoomDto;
 import com.dushy.tenantmanage.dto.FloorDto;
 import com.dushy.tenantmanage.dto.PropertyDto;
 import com.dushy.tenantmanage.dto.RoomDto;
+import com.dushy.tenantmanage.dto.RoomInfoDto;
 import com.dushy.tenantmanage.entity.Floor;
 import com.dushy.tenantmanage.entity.Properties;
 import com.dushy.tenantmanage.entity.Room;
@@ -172,6 +173,16 @@ public class PropertyController {
         authorizationService.checkPropertyAccess(currentUser.getId(), propertyId);
         List<Room> rooms = propertyService.getRoomsByFloor(floorId);
         return ResponseEntity.ok(rooms);
+    }
+
+    @GetMapping("/floors/{floorId}/rooms/info")
+    public ResponseEntity<List<RoomInfoDto>> getRoomsInfoByFloor(@PathVariable Long floorId) {
+        User currentUser = getCurrentUser();
+        // Check access via property hierarchy
+        Long propertyId = authorizationService.getPropertyIdFromFloor(floorId);
+        authorizationService.checkPropertyAccess(currentUser.getId(), propertyId);
+        List<RoomInfoDto> roomsInfo = propertyService.getRoomsInfoByFloor(floorId);
+        return ResponseEntity.ok(roomsInfo);
     }
 
     @GetMapping("/floors/{floorId}/rooms/available")

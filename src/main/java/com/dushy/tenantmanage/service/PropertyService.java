@@ -5,6 +5,7 @@ import com.dushy.tenantmanage.dto.BulkRoomDto;
 import com.dushy.tenantmanage.dto.FloorDto;
 import com.dushy.tenantmanage.dto.PropertyDto;
 import com.dushy.tenantmanage.dto.RoomDto;
+import com.dushy.tenantmanage.dto.RoomInfoDto;
 import com.dushy.tenantmanage.entity.Floor;
 import com.dushy.tenantmanage.entity.Properties;
 import com.dushy.tenantmanage.entity.Room;
@@ -178,4 +179,12 @@ public interface PropertyService {
      * @return list of created rooms
      */
     List<Room> bulkCreateRooms(BulkRoomDto bulkRoomDto);
+
+    /**
+     * Get rooms with tenant and due info for a floor.
+     *
+     * @param floorId the floor ID
+     * @return list of room info DTOs with tenant and due details
+     */
+    List<RoomInfoDto> getRoomsInfoByFloor(Long floorId);
 }
