@@ -20,6 +20,7 @@ public class HealthController {
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(Map.of(
                 "status", "UP",
+                "version", "1.0.0",
                 "timestamp", Instant.now().toString(),
                 "service", "tenantmanage"));
     }
