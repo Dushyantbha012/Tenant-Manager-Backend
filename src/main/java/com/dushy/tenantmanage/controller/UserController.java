@@ -2,6 +2,7 @@ package com.dushy.tenantmanage.controller;
 
 import com.dushy.tenantmanage.dto.request.AddAssistantRequest;
 import com.dushy.tenantmanage.dto.request.EmailRequest;
+import com.dushy.tenantmanage.dto.OwnerDto;
 import com.dushy.tenantmanage.dto.PropertyAccessDto;
 import com.dushy.tenantmanage.dto.UpdatePasswordDto;
 import com.dushy.tenantmanage.dto.UserDto;
@@ -96,6 +97,17 @@ public class UserController {
         User currentUser = getCurrentUser();
         userService.removeAssistant(currentUser.getId(), assistantId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Get list of owners for whom the current user is an assistant.
+     * Used for the mode selector on the frontend.
+     */
+    @GetMapping("/owners")
+    public ResponseEntity<List<OwnerDto>> getOwners() {
+        User currentUser = getCurrentUser();
+        List<OwnerDto> owners = userService.getOwnersForAssistant(currentUser.getId());
+        return ResponseEntity.ok(owners);
     }
 
     // ==================== ACCESS MANAGEMENT ENDPOINTS ====================

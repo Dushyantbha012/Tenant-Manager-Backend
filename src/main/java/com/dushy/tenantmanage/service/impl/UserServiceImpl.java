@@ -1,5 +1,6 @@
 package com.dushy.tenantmanage.service.impl;
 
+import com.dushy.tenantmanage.dto.OwnerDto;
 import com.dushy.tenantmanage.dto.UpdatePasswordDto;
 import com.dushy.tenantmanage.dto.UserDto;
 import com.dushy.tenantmanage.entity.Properties;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of UserService.
@@ -199,5 +201,20 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("PropertyAccess", accessId));
         access.setIsActive(false);
         propertyAccessRepository.save(access);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OwnerDto> getOwnersForAssistant(Long userId) {
+        List<PropertyAccess> accessList = propertyAccessRepository.findByUserIdAndIsActiveTrue(userId);
+        return accessList.stream()
+                .map(access -> access.getProperty().getOwner())
+                .distinct()
+                .map(owner -> OwnerDto.builder()
+                        .id(owner.getId())
+                        .fullName(owner.getFullName())
+                        .email(owner.getEmail())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

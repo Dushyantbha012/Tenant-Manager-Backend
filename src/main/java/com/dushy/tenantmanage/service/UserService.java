@@ -1,5 +1,6 @@
 package com.dushy.tenantmanage.service;
 
+import com.dushy.tenantmanage.dto.OwnerDto;
 import com.dushy.tenantmanage.dto.UpdatePasswordDto;
 import com.dushy.tenantmanage.dto.UserDto;
 import com.dushy.tenantmanage.entity.PropertyAccess;
@@ -100,4 +101,12 @@ public interface UserService {
      * @param assistantId the assistant's ID
      */
     void removeAssistant(Long ownerId, Long assistantId);
+
+    /**
+     * Get all owners for whom the user is an assistant.
+     *
+     * @param userId the user's ID
+     * @return list of owner DTOs
+     */
+    List<OwnerDto> getOwnersForAssistant(Long userId);
 }

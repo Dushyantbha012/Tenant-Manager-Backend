@@ -58,10 +58,22 @@ public class PropertyController {
     }
 
     @GetMapping("/properties")
-    public ResponseEntity<List<Properties>> getMyProperties() {
+    public ResponseEntity<List<Properties>> getMyProperties(
+            @RequestParam(required = false, defaultValue = "all") String mode,
+            @RequestParam(required = false) Long ownerId) {
         User currentUser = getCurrentUser();
-        // Returns only properties user owns or has access to
-        List<Properties> properties = authorizationService.getAccessibleProperties(currentUser.getId());
+
+        List<Properties> properties;
+        if ("owner".equalsIgnoreCase(mode)) {
+            // Only properties where user is the owner
+            properties = authorizationService.getPropertiesAsOwner(currentUser.getId());
+        } else if ("assistant".equalsIgnoreCase(mode)) {
+            // Only properties where user is an assistant, optionally filtered by owner
+            properties = authorizationService.getPropertiesAsAssistant(currentUser.getId(), ownerId);
+        } else {
+            // Default: all accessible properties (owned + assistant access)
+            properties = authorizationService.getAccessibleProperties(currentUser.getId());
+        }
         return ResponseEntity.ok(properties);
     }
 

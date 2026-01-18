@@ -306,4 +306,52 @@ public class PropertyAuthorizationService {
         Set<Long> accessibleIds = getAccessiblePropertyIds(userId);
         return propertiesRepository.findByIdInOrderByNameAsc(accessibleIds);
     }
+
+    /**
+     * Get properties owned by the user.
+     *
+     * @param userId the user's ID
+     * @return list of owned properties
+     */
+    public List<Properties> getPropertiesAsOwner(Long userId) {
+        return propertiesRepository.findByOwnerIdOrderByNameAsc(userId);
+    }
+
+    /**
+     * Get properties where the user is an assistant (has granted access).
+     *
+     * @param userId the user's ID
+     * @return list of properties where user is assistant
+     */
+    public List<Properties> getPropertiesAsAssistant(Long userId) {
+        return getPropertiesAsAssistant(userId, null);
+    }
+
+    /**
+     * Get properties where the user is an assistant (has granted access),
+     * optionally filtered by owner.
+     *
+     * @param userId  the user's ID
+     * @param ownerId optional owner ID to filter by
+     * @return list of properties where user is assistant
+     */
+    public List<Properties> getPropertiesAsAssistant(Long userId, Long ownerId) {
+        List<PropertyAccess> accessList = propertyAccessRepository.findByUserIdAndIsActiveTrue(userId);
+
+        if (ownerId != null) {
+            accessList = accessList.stream()
+                    .filter(a -> a.getProperty().getOwner().getId().equals(ownerId))
+                    .toList();
+        }
+
+        Set<Long> propertyIds = accessList.stream()
+                .map(access -> access.getProperty().getId())
+                .collect(Collectors.toSet());
+
+        if (propertyIds.isEmpty()) {
+            return List.of();
+        }
+
+        return propertiesRepository.findByIdInOrderByNameAsc(propertyIds);
+    }
 }
