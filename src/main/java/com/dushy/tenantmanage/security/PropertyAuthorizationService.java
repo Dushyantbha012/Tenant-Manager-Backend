@@ -154,6 +154,18 @@ public class PropertyAuthorizationService {
         return tenant.getRoom().getFloor().getProperty().getId();
     }
 
+    /**
+     * Get property ID from a property access record.
+     *
+     * @param accessId the property access ID
+     * @return the property ID
+     */
+    public Long getPropertyIdFromAccess(Long accessId) {
+        PropertyAccess access = propertyAccessRepository.findById(accessId)
+                .orElseThrow(() -> new ResourceNotFoundException("PropertyAccess", accessId));
+        return access.getProperty().getId();
+    }
+
     // ==================== THROWING CHECK METHODS ====================
 
     /**

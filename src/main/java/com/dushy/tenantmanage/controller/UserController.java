@@ -25,11 +25,14 @@ public class UserController {
 
     private final UserService userService;
     private final CustomUserDetailsService userDetailsService;
+    private final com.dushy.tenantmanage.security.PropertyAuthorizationService authorizationService;
 
     public UserController(UserService userService,
-            CustomUserDetailsService userDetailsService) {
+            CustomUserDetailsService userDetailsService,
+            com.dushy.tenantmanage.security.PropertyAuthorizationService authorizationService) {
         this.userService = userService;
         this.userDetailsService = userDetailsService;
+        this.authorizationService = authorizationService;
     }
 
     private User getCurrentUser() {
@@ -61,14 +64,13 @@ public class UserController {
 
     // ==================== USER MANAGEMENT ENDPOINTS ====================
 
-    @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        User currentUser = getCurrentUser();
+        // Only allow users to view their own profile
+        if (!currentUser.getId().equals(id)) {
+            throw new com.dushy.tenantmanage.exception.AccessDeniedException("User", id);
+        }
         User user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
@@ -85,6 +87,10 @@ public class UserController {
     @PostMapping("/access")
     public ResponseEntity<PropertyAccess> assignPropertyAccess(@Valid @RequestBody PropertyAccessDto accessDto) {
         User currentUser = getCurrentUser();
+
+        // Only property owner can assign access
+        authorizationService.checkPropertyOwner(currentUser.getId(), accessDto.getPropertyId());
+
         PropertyAccess access = userService.assignPropertyAccess(
                 accessDto.getPropertyId(),
                 accessDto.getUserId(),
@@ -95,12 +101,24 @@ public class UserController {
 
     @GetMapping("/{userId}/access")
     public ResponseEntity<List<PropertyAccess>> getPropertyAccessByUser(@PathVariable Long userId) {
+        User currentUser = getCurrentUser();
+        // Only allow users to view their own access
+        if (!currentUser.getId().equals(userId)) {
+            throw new com.dushy.tenantmanage.exception.AccessDeniedException("User", userId);
+        }
+
         List<PropertyAccess> accessList = userService.getPropertyAccessByUser(userId);
         return ResponseEntity.ok(accessList);
     }
 
     @DeleteMapping("/access/{accessId}")
     public ResponseEntity<Void> revokeAccess(@PathVariable Long accessId) {
+        User currentUser = getCurrentUser();
+
+        // Verify user is owner of the property related to this access
+        Long propertyId = authorizationService.getPropertyIdFromAccess(accessId);
+        authorizationService.checkPropertyOwner(currentUser.getId(), propertyId);
+
         userService.revokeAccess(accessId);
         return ResponseEntity.noContent().build();
     }

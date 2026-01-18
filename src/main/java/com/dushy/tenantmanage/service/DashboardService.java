@@ -27,14 +27,6 @@ public interface DashboardService {
     DashboardSummaryDto getPropertySummary(Long propertyId);
 
     /**
-     * Get rent collection trends.
-     *
-     * @param months number of months to look back
-     * @return list of trend data points
-     */
-    List<TrendDataDto> getRentTrends(int months);
-
-    /**
      * Get rent collection trends for a specific user's accessible properties.
      *
      * @param userId the user ID
@@ -42,14 +34,6 @@ public interface DashboardService {
      * @return list of trend data points
      */
     List<TrendDataDto> getRentTrendsForUser(Long userId, int months);
-
-    /**
-     * Get occupancy trends.
-     *
-     * @param months number of months to look back
-     * @return list of trend data points
-     */
-    List<TrendDataDto> getOccupancyTrends(int months);
 
     /**
      * Get occupancy trends for a specific user's accessible properties.
