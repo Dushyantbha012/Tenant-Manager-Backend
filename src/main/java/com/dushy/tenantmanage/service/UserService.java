@@ -84,4 +84,20 @@ public interface UserService {
      * @param accessId the access record ID
      */
     void revokeAccess(Long accessId);
+
+    /**
+     * Add an assistant to the owner's list.
+     *
+     * @param ownerId        the owner's ID
+     * @param assistantEmail the assistant's email
+     */
+    void addAssistant(Long ownerId, String assistantEmail);
+
+    /**
+     * Remove an assistant from the owner's list.
+     *
+     * @param ownerId     the owner's ID
+     * @param assistantId the assistant's ID
+     */
+    void removeAssistant(Long ownerId, Long assistantId);
 }

@@ -49,6 +49,81 @@ public class PropertyAuthorizationService {
         this.tenantRepository = tenantRepository;
     }
 
+    // ==================== PERMISSION CHECK METHODS ====================
+
+    /**
+     * Check if user has a specific permission for a property.
+     * Owners have all permissions.
+     *
+     * @param userId     the user's ID
+     * @param propertyId the property's ID
+     * @param permission the required permission
+     * @return true if user has permission, false otherwise
+     */
+    public boolean hasPropertyPermission(Long userId, Long propertyId,
+            com.dushy.tenantmanage.enums.PropertyPermission permission) {
+        // Check if user is owner
+        Properties property = propertiesRepository.findById(propertyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Property", propertyId));
+
+        if (property.getOwner().getId().equals(userId)) {
+            return true;
+        }
+
+        // Check if user has PropertyAccess with the required permission
+        Optional<PropertyAccess> access = propertyAccessRepository
+                .findByPropertyIdAndUserIdAndIsActiveTrue(propertyId, userId);
+
+        if (access.isEmpty()) {
+            return false;
+        }
+
+        // Backward compatibility: ADMIN/WRITE levels imply certain permissions if not
+        // explicitly set
+        // But for granular control, we primarily check the permissions set.
+        // However, if we are transitioning, we might want to map AccessLevel to
+        // Permissions.
+        // For now, let's assume if permissions set is not empty, we check it.
+        // If it is empty, we fallback to AccessLevel (legacy support) or just fail.
+
+        Set<com.dushy.tenantmanage.enums.PropertyPermission> permissions = access.get().getPermissions();
+        if (permissions.contains(permission)) {
+            return true;
+        }
+
+        // Logical mapping for legacy AccessLevel
+        AccessLevel level = access.get().getAccessLevel();
+        if (level == AccessLevel.ADMIN) {
+            return true; // Admin has all permissions
+        }
+        if (level == AccessLevel.WRITE) {
+            // Write implies managing rooms, tenants, payments, settings but maybe not
+            // critical things?
+            // Let's say WRITE is broad.
+            return true;
+        }
+        if (level == AccessLevel.READ && permission == com.dushy.tenantmanage.enums.PropertyPermission.VIEW_PROPERTY) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check property permission and throw exception if denied.
+     *
+     * @param userId     the user's ID
+     * @param propertyId the property's ID
+     * @param permission the required permission
+     * @throws AccessDeniedException if user has no permission
+     */
+    public void checkPropertyPermission(Long userId, Long propertyId,
+            com.dushy.tenantmanage.enums.PropertyPermission permission) {
+        if (!hasPropertyPermission(userId, propertyId, permission)) {
+            throw new AccessDeniedException("Property", propertyId, permission.getDescription());
+        }
+    }
+
     // ==================== ACCESS CHECK METHODS ====================
 
     /**
@@ -77,29 +152,18 @@ public class PropertyAuthorizationService {
     /**
      * Check if user has write access to a property (owner or WRITE/ADMIN access).
      * 
+     * @deprecated Use checkPropertyPermission with specific permission instead.
+     * 
      * @param userId     the user's ID
      * @param propertyId the property's ID
      * @return true if user has write access, false otherwise
      */
+    @Deprecated
     public boolean hasPropertyWriteAccess(Long userId, Long propertyId) {
-        // Check if user is owner
-        Properties property = propertiesRepository.findById(propertyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Property", propertyId));
-
-        if (property.getOwner().getId().equals(userId)) {
-            return true;
-        }
-
-        // Check if user has WRITE or ADMIN access
-        Optional<PropertyAccess> access = propertyAccessRepository
-                .findByPropertyIdAndUserIdAndIsActiveTrue(propertyId, userId);
-
-        if (access.isEmpty()) {
-            return false;
-        }
-
-        AccessLevel level = access.get().getAccessLevel();
-        return level == AccessLevel.WRITE || level == AccessLevel.ADMIN;
+        return hasPropertyPermission(userId, propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_SETTINGS) || // Assume settings is high level
+                hasPropertyPermission(userId, propertyId, com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS); // Or
+                                                                                                                         // rooms
     }
 
     /**

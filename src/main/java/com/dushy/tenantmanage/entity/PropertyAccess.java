@@ -38,6 +38,13 @@ public class PropertyAccess {
     @Column(name = "access_level", nullable = false, length = 20)
     private AccessLevel accessLevel;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "property_access_permissions", joinColumns = @JoinColumn(name = "property_access_id"))
+    @Column(name = "permission")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private java.util.Set<com.dushy.tenantmanage.enums.PropertyPermission> permissions = new java.util.HashSet<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "granted_by", nullable = false)
     private User grantedBy;

@@ -6,14 +6,16 @@ import com.dushy.tenantmanage.entity.Properties;
 import com.dushy.tenantmanage.entity.PropertyAccess;
 import com.dushy.tenantmanage.entity.User;
 import com.dushy.tenantmanage.enums.AccessLevel;
-import com.dushy.tenantmanage.enums.UserType;
+
 import com.dushy.tenantmanage.exception.DuplicateResourceException;
 import com.dushy.tenantmanage.exception.InvalidOperationException;
 import com.dushy.tenantmanage.exception.ResourceNotFoundException;
 import com.dushy.tenantmanage.repository.PropertiesRepository;
 import com.dushy.tenantmanage.repository.PropertyAccessRepository;
+import com.dushy.tenantmanage.repository.UserAssistantRepository;
 import com.dushy.tenantmanage.repository.UserRepository;
 import com.dushy.tenantmanage.service.UserService;
+import com.dushy.tenantmanage.entity.UserAssistant;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,15 +34,18 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PropertyAccessRepository propertyAccessRepository;
     private final PropertiesRepository propertiesRepository;
+    private final UserAssistantRepository userAssistantRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UserServiceImpl(UserRepository userRepository,
             PropertyAccessRepository propertyAccessRepository,
             PropertiesRepository propertiesRepository,
+            UserAssistantRepository userAssistantRepository,
             PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.propertyAccessRepository = propertyAccessRepository;
         this.propertiesRepository = propertiesRepository;
+        this.userAssistantRepository = userAssistantRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -154,8 +159,32 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<User> getAssistants(Long ownerId) {
-        // Get all ASSISTANT type users - in a real system you'd track who created them
-        return userRepository.findByUserType(UserType.ASSISTANT);
+        return userAssistantRepository.findByOwnerIdAndIsActiveTrue(ownerId).stream()
+                .map(UserAssistant::getAssistant)
+                .toList();
+    }
+
+    public void addAssistant(Long ownerId, String assistantEmail) {
+        User owner = getUserById(ownerId);
+        User assistant = userRepository.findByEmail(assistantEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email: " + assistantEmail));
+
+        if (userAssistantRepository.findByOwnerIdAndAssistantId(ownerId, assistant.getId()).isPresent()) {
+            throw new DuplicateResourceException("Assistant", "email", assistantEmail);
+        }
+
+        UserAssistant userAssistant = UserAssistant.builder()
+                .owner(owner)
+                .assistant(assistant)
+                .isActive(true)
+                .build();
+        userAssistantRepository.save(userAssistant);
+    }
+
+    public void removeAssistant(Long ownerId, Long assistantId) {
+        UserAssistant userAssistant = userAssistantRepository.findByOwnerIdAndAssistantId(ownerId, assistantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assistant not found for this owner"));
+        userAssistantRepository.delete(userAssistant);
     }
 
     @Override

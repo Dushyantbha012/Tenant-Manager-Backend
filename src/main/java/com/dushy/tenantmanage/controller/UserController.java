@@ -1,5 +1,7 @@
 package com.dushy.tenantmanage.controller;
 
+import com.dushy.tenantmanage.dto.request.AddAssistantRequest;
+import com.dushy.tenantmanage.dto.request.EmailRequest;
 import com.dushy.tenantmanage.dto.PropertyAccessDto;
 import com.dushy.tenantmanage.dto.UpdatePasswordDto;
 import com.dushy.tenantmanage.dto.UserDto;
@@ -80,6 +82,20 @@ public class UserController {
         User currentUser = getCurrentUser();
         List<User> assistants = userService.getAssistants(currentUser.getId());
         return ResponseEntity.ok(assistants);
+    }
+
+    @PostMapping("/assistants")
+    public ResponseEntity<Void> addAssistant(@RequestBody @Valid EmailRequest request) {
+        User currentUser = getCurrentUser();
+        userService.addAssistant(currentUser.getId(), request.getEmail());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/assistants/{assistantId}")
+    public ResponseEntity<Void> removeAssistant(@PathVariable Long assistantId) {
+        User currentUser = getCurrentUser();
+        userService.removeAssistant(currentUser.getId(), assistantId);
+        return ResponseEntity.noContent().build();
     }
 
     // ==================== ACCESS MANAGEMENT ENDPOINTS ====================

@@ -117,8 +117,9 @@ public class PropertyController {
     public ResponseEntity<Floor> addFloor(@PathVariable Long propertyId,
             @Valid @RequestBody FloorDto floorDto) {
         User currentUser = getCurrentUser();
-        // Require write access to add floors
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        // Require MANAGE_ROOMS permission
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS);
         Floor floor = propertyService.addFloor(floorDto, propertyId);
         return ResponseEntity.status(HttpStatus.CREATED).body(floor);
     }
@@ -137,9 +138,10 @@ public class PropertyController {
     public ResponseEntity<Floor> updateFloor(@PathVariable Long id,
             @Valid @RequestBody FloorDto floorDto) {
         User currentUser = getCurrentUser();
-        // Require write access via property hierarchy
+        // Require MANAGE_ROOMS permission
         Long propertyId = authorizationService.getPropertyIdFromFloor(id);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS);
         Floor floor = propertyService.updateFloor(id, floorDto);
         return ResponseEntity.ok(floor);
     }
@@ -147,9 +149,10 @@ public class PropertyController {
     @DeleteMapping("/floors/{id}")
     public ResponseEntity<Void> deleteFloor(@PathVariable Long id) {
         User currentUser = getCurrentUser();
-        // Require write access via property hierarchy
+        // Require MANAGE_ROOMS permission
         Long propertyId = authorizationService.getPropertyIdFromFloor(id);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS);
         propertyService.deleteFloor(id);
         return ResponseEntity.noContent().build();
     }
@@ -157,8 +160,9 @@ public class PropertyController {
     @PostMapping("/floors/bulk")
     public ResponseEntity<List<Floor>> bulkCreateFloors(@Valid @RequestBody BulkFloorDto bulkFloorDto) {
         User currentUser = getCurrentUser();
-        // Require write access to property
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), bulkFloorDto.getPropertyId());
+        // Require MANAGE_ROOMS permission
+        authorizationService.checkPropertyPermission(currentUser.getId(), bulkFloorDto.getPropertyId(),
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS);
         List<Floor> floors = propertyService.bulkCreateFloors(bulkFloorDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(floors);
     }
@@ -199,9 +203,10 @@ public class PropertyController {
     public ResponseEntity<Room> addRoom(@PathVariable Long floorId,
             @Valid @RequestBody RoomDto roomDto) {
         User currentUser = getCurrentUser();
-        // Require write access via property hierarchy
+        // Require MANAGE_ROOMS permission
         Long propertyId = authorizationService.getPropertyIdFromFloor(floorId);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS);
         Room room = propertyService.addRoom(roomDto, floorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(room);
     }
@@ -220,9 +225,10 @@ public class PropertyController {
     public ResponseEntity<Room> updateRoom(@PathVariable Long id,
             @Valid @RequestBody RoomDto roomDto) {
         User currentUser = getCurrentUser();
-        // Require write access via property hierarchy
+        // Require MANAGE_ROOMS permission
         Long propertyId = authorizationService.getPropertyIdFromRoom(id);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS);
         Room room = propertyService.updateRoom(id, roomDto);
         return ResponseEntity.ok(room);
     }
@@ -230,9 +236,10 @@ public class PropertyController {
     @DeleteMapping("/rooms/{id}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Long id) {
         User currentUser = getCurrentUser();
-        // Require write access via property hierarchy
+        // Require MANAGE_ROOMS permission
         Long propertyId = authorizationService.getPropertyIdFromRoom(id);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS);
         propertyService.deleteRoom(id);
         return ResponseEntity.noContent().build();
     }
@@ -253,9 +260,10 @@ public class PropertyController {
     @PostMapping("/rooms/bulk")
     public ResponseEntity<List<Room>> bulkCreateRooms(@Valid @RequestBody BulkRoomDto bulkRoomDto) {
         User currentUser = getCurrentUser();
-        // Require write access via floor's property
+        // Require MANAGE_ROOMS permission
         Long propertyId = authorizationService.getPropertyIdFromFloor(bulkRoomDto.getFloorId());
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_ROOMS);
         List<Room> rooms = propertyService.bulkCreateRooms(bulkRoomDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(rooms);
     }

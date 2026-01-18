@@ -50,9 +50,10 @@ public class TenantController {
     @PostMapping("/tenants")
     public ResponseEntity<TenantResponseDto> addTenant(@Valid @RequestBody CreateTenantRequest request) {
         User currentUser = getCurrentUser();
-        // Require write access to the room's property
+        // Require MANAGE_TENANTS permission
         Long propertyId = authorizationService.getPropertyIdFromRoom(request.getRoomId());
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_TENANTS);
 
         Tenant tenant = tenantService.addTenant(
                 request.getTenant(),
@@ -91,9 +92,10 @@ public class TenantController {
     public ResponseEntity<TenantResponseDto> updateTenant(@PathVariable Long id,
             @Valid @RequestBody TenantDto tenantDto) {
         User currentUser = getCurrentUser();
-        // Require write access to tenant's property
+        // Require MANAGE_TENANTS permission
         Long propertyId = authorizationService.getPropertyIdFromTenant(id);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_TENANTS);
 
         Tenant tenant = tenantService.updateTenant(id, tenantDto);
         return ResponseEntity.ok(tenantService.toResponseDto(tenant));
@@ -102,9 +104,10 @@ public class TenantController {
     @DeleteMapping("/tenants/{id}")
     public ResponseEntity<TenantResponseDto> moveOutTenant(@PathVariable Long id) {
         User currentUser = getCurrentUser();
-        // Require write access to tenant's property
+        // Require MANAGE_TENANTS permission
         Long propertyId = authorizationService.getPropertyIdFromTenant(id);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_TENANTS);
 
         Tenant tenant = tenantService.moveOutTenant(id);
         return ResponseEntity.ok(tenantService.toResponseDto(tenant));
@@ -114,9 +117,10 @@ public class TenantController {
     public ResponseEntity<TenantResponseDto> swapTenant(@PathVariable Long id,
             @Valid @RequestBody SwapTenantRequest request) {
         User currentUser = getCurrentUser();
-        // Require write access to tenant's property
+        // Require MANAGE_TENANTS permission
         Long propertyId = authorizationService.getPropertyIdFromTenant(id);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_TENANTS);
 
         Tenant newTenant = tenantService.swapTenant(
                 id,
@@ -130,9 +134,10 @@ public class TenantController {
     public ResponseEntity<RentAgreement> updateAgreement(@PathVariable Long id,
             @Valid @RequestBody RentAgreementDto agreementDto) {
         User currentUser = getCurrentUser();
-        // Require write access to tenant's property
+        // Require MANAGE_TENANTS permission
         Long propertyId = authorizationService.getPropertyIdFromTenant(id);
-        authorizationService.checkPropertyWriteAccess(currentUser.getId(), propertyId);
+        authorizationService.checkPropertyPermission(currentUser.getId(), propertyId,
+                com.dushy.tenantmanage.enums.PropertyPermission.MANAGE_TENANTS);
 
         RentAgreement agreement = tenantService.updateAgreement(id, agreementDto);
         return ResponseEntity.ok(agreement);
