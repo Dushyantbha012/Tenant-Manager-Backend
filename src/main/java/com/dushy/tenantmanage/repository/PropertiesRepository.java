@@ -14,25 +14,33 @@ import java.util.List;
 public interface PropertiesRepository extends JpaRepository<Properties, Long> {
 
     /**
-     * Find all properties owned by a specific user.
+     * Find all properties owned by a specific user, ordered by name.
      *
      * @param ownerId the ID of the property owner
      * @return list of properties owned by the user
      */
-    List<Properties> findByOwnerId(Long ownerId);
+    List<Properties> findByOwnerIdOrderByNameAsc(Long ownerId);
 
     /**
-     * Find all active properties.
+     * Find all active properties, ordered by name.
      *
      * @return list of active properties
      */
-    List<Properties> findByIsActiveTrue();
+    List<Properties> findByIsActiveTrueOrderByNameAsc();
 
     /**
-     * Find properties by city.
+     * Find properties by city, ordered by name.
      *
      * @param city the city to search for
      * @return list of properties in the specified city
      */
-    List<Properties> findByCity(String city);
+    List<Properties> findByCityOrderByNameAsc(String city);
+
+    /**
+     * Find properties by a list of IDs, ordered by name.
+     *
+     * @param ids the list of property IDs
+     * @return list of properties
+     */
+    List<Properties> findByIdInOrderByNameAsc(java.util.Collection<Long> ids);
 }

@@ -217,7 +217,7 @@ public class PropertyAuthorizationService {
      */
     public Set<Long> getAccessiblePropertyIds(Long userId) {
         // Get owned properties
-        Set<Long> propertyIds = propertiesRepository.findByOwnerId(userId)
+        Set<Long> propertyIds = propertiesRepository.findByOwnerIdOrderByNameAsc(userId)
                 .stream()
                 .map(Properties::getId)
                 .collect(Collectors.toSet());
@@ -240,6 +240,6 @@ public class PropertyAuthorizationService {
      */
     public List<Properties> getAccessibleProperties(Long userId) {
         Set<Long> accessibleIds = getAccessiblePropertyIds(userId);
-        return propertiesRepository.findAllById(accessibleIds);
+        return propertiesRepository.findByIdInOrderByNameAsc(accessibleIds);
     }
 }

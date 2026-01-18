@@ -43,7 +43,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public DashboardSummaryDto getDashboardSummary(Long userId) {
-        List<Properties> properties = propertiesRepository.findByOwnerId(userId);
+        List<Properties> properties = propertiesRepository.findByOwnerIdOrderByNameAsc(userId);
         int totalProperties = properties.size();
 
         // Calculate room counts only for user's properties (security fix)
@@ -137,7 +137,7 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate startMonth = LocalDate.now().withDayOfMonth(1).minusMonths(months - 1);
 
         // Get user's accessible properties
-        List<Properties> userProperties = propertiesRepository.findByOwnerId(userId);
+        List<Properties> userProperties = propertiesRepository.findByOwnerIdOrderByNameAsc(userId);
 
         for (int i = 0; i < months; i++) {
             LocalDate month = startMonth.plusMonths(i);
@@ -164,7 +164,7 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate startMonth = LocalDate.now().withDayOfMonth(1).minusMonths(months - 1);
 
         // Get user's accessible properties
-        List<Properties> userProperties = propertiesRepository.findByOwnerId(userId);
+        List<Properties> userProperties = propertiesRepository.findByOwnerIdOrderByNameAsc(userId);
 
         long totalRooms = 0;
         long occupiedRooms = 0;

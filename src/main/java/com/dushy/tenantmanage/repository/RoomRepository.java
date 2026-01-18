@@ -14,20 +14,21 @@ import java.util.List;
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
     /**
-     * Find all rooms on a specific floor.
+     * Find all rooms on a specific floor, ordered by room number.
      *
      * @param floorId the ID of the floor
      * @return list of rooms on the floor
      */
-    List<Room> findByFloorId(Long floorId);
+    List<Room> findByFloorIdOrderByRoomNumberAsc(Long floorId);
 
     /**
-     * Find all available rooms across the system.
+     * Find all available rooms across the system, ordered by property, floor, and
+     * room number.
      * Rooms that are not occupied and are active.
      *
      * @return list of available rooms
      */
-    List<Room> findByIsOccupiedFalseAndIsActiveTrue();
+    List<Room> findByIsOccupiedFalseAndIsActiveTrueOrderByFloorPropertyIdAscFloorFloorNumberAscRoomNumberAsc();
 
     /**
      * Count total occupied and active rooms.
@@ -38,28 +39,30 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     long countByIsOccupiedTrueAndIsActiveTrue();
 
     /**
-     * Find available rooms on a specific floor.
+     * Find available rooms on a specific floor, ordered by room number.
      *
      * @param floorId the ID of the floor
      * @return list of available rooms on the floor
      */
-    List<Room> findByFloorIdAndIsOccupiedFalse(Long floorId);
+    List<Room> findByFloorIdAndIsOccupiedFalseOrderByRoomNumberAsc(Long floorId);
 
     /**
-     * Find all rooms in a property (through floor relationship).
+     * Find all rooms in a property (through floor relationship), ordered by floor
+     * number and room number.
      *
      * @param propertyId the ID of the property
      * @return list of all rooms in the property
      */
-    List<Room> findByFloorPropertyId(Long propertyId);
+    List<Room> findByFloorPropertyIdOrderByFloorFloorNumberAscRoomNumberAsc(Long propertyId);
 
     /**
-     * Find vacant rooms in a property.
+     * Find vacant rooms in a property, ordered by floor number and room number.
      *
      * @param propertyId the ID of the property
      * @return list of vacant rooms in the property
      */
-    List<Room> findByFloorPropertyIdAndIsOccupiedFalseAndIsActiveTrue(Long propertyId);
+    List<Room> findByFloorPropertyIdAndIsOccupiedFalseAndIsActiveTrueOrderByFloorFloorNumberAscRoomNumberAsc(
+            Long propertyId);
 
     /**
      * Count total rooms in a property.

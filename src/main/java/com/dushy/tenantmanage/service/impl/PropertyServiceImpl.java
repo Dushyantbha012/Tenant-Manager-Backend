@@ -183,7 +183,7 @@ public class PropertyServiceImpl implements PropertyService {
     @Override
     @Transactional(readOnly = true)
     public List<Properties> getPropertiesByOwner(Long ownerId) {
-        return propertiesRepository.findByOwnerId(ownerId);
+        return propertiesRepository.findByOwnerIdOrderByNameAsc(ownerId);
     }
 
     @Override
@@ -202,25 +202,26 @@ public class PropertyServiceImpl implements PropertyService {
     @Override
     @Transactional(readOnly = true)
     public List<Room> getRoomsByFloor(Long floorId) {
-        return roomRepository.findByFloorId(floorId);
+        return roomRepository.findByFloorIdOrderByRoomNumberAsc(floorId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Room> getAvailableRoomsByFloor(Long floorId) {
-        return roomRepository.findByFloorIdAndIsOccupiedFalse(floorId);
+        return roomRepository.findByFloorIdAndIsOccupiedFalseOrderByRoomNumberAsc(floorId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Room> getRoomsByProperty(Long propertyId) {
-        return roomRepository.findByFloorPropertyId(propertyId);
+        return roomRepository.findByFloorPropertyIdOrderByFloorFloorNumberAscRoomNumberAsc(propertyId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Room> getVacantRooms() {
-        return roomRepository.findByIsOccupiedFalseAndIsActiveTrue();
+        return roomRepository
+                .findByIsOccupiedFalseAndIsActiveTrueOrderByFloorPropertyIdAscFloorFloorNumberAscRoomNumberAsc();
     }
 
     @Override
