@@ -37,7 +37,8 @@ public class UserController {
 
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return userDetailsService.loadUserEntityByEmail(auth.getName());
+        // The JwtAuthenticationFilter now stores the User entity as the principal
+        return (User) auth.getPrincipal();
     }
 
     // ==================== PROFILE ENDPOINTS ====================

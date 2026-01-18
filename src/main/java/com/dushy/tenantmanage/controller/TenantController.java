@@ -44,7 +44,8 @@ public class TenantController {
 
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return userDetailsService.loadUserEntityByEmail(auth.getName());
+        // The JwtAuthenticationFilter now stores the User entity as the principal
+        return (User) auth.getPrincipal();
     }
 
     @PostMapping("/tenants")

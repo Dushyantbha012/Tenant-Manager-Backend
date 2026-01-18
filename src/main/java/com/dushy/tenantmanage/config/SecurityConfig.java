@@ -59,6 +59,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/api/health/**", "/login/**", "/oauth2/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/ws/**").permitAll() // WebSocket handshake
+                        .requestMatchers("/api/chat/**").authenticated() // Chatbot REST API
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

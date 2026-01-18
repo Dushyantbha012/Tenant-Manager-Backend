@@ -62,6 +62,15 @@ Initiate Google OAuth2 login flow.
 
 ---
 
+## 1.1 Utility APIs
+
+### **GET** `/api/health`
+Check application health status.
+- **Access**: Public (No token required)
+- **Response:** `200 OK` with status, version, and timestamp.
+
+---
+
 ## 2. Property Management APIs
 
 ### Properties
@@ -302,17 +311,16 @@ Change password.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/users` | Get all users |
-| GET | `/api/users/{id}` | Get user by ID |
+| GET | `/api/users/{id}` | Get user by ID (Self only) |
 | GET | `/api/users/assistants` | Get all assistants |
 
 ### Access Management
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/users/access` | Grant property access to a user |
-| GET | `/api/users/{userId}/access` | Get property access for a user |
-| DELETE | `/api/users/access/{accessId}` | Revoke property access |
+| POST | `/api/users/access` | Grant property access to a user (Owner only) |
+| GET | `/api/users/{userId}/access` | Get property access for a user (Self only) |
+| DELETE | `/api/users/access/{accessId}` | Revoke property access (Owner only) |
 
 #### **POST** `/api/users/access`
 Grant property access to a user.
